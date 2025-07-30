@@ -28,9 +28,9 @@ const SECTION_OPTIONS = [
     { value: 'PlaneLanding', label: 'Flight', heading: 'Arrival' },
     { value: 'Landmark', label: 'Activity', heading: 'Activities' },
     { value: 'CarFront', label: 'Car', heading: 'Transfer' },
-    { value: 'Hotel', label: 'Hotel', heading: 'Hotel' },
-    { value: 'Restaurant', label: 'Restaurant', heading: 'Dining' },
-    { value: 'Table', label: 'Meeting', heading: 'Meeting' },
+    // { value: 'Hotel', label: 'Hotel', heading: 'Hotel' },
+    // { value: 'Restaurant', label: 'Restaurant', heading: 'Dining' },
+    // { value: 'Table', label: 'Meeting', heading: 'Meeting' },
 ];
 
 function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate }) {

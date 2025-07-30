@@ -22,7 +22,9 @@ function LandingPage() {
       title: 'Thank You Page',
       thankYouTitle: '',      // Add these fields
       thankYouMessage: '',    // Add these fields
-      contactDetails: ''      // Add these fields
+      phoneNumber: '',           // Changed from contactDetails
+      emailAddress: '',          // New field
+      websiteOrInstagram: ''       // Add these fields
     }
   ]);
 

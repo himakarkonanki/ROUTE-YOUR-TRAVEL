@@ -7,7 +7,9 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
     const [localData, setLocalData] = useState({
         thankYouTitle: '',
         thankYouMessage: '',
-        contactDetails: ''
+        phoneNumber: '',
+        emailAddress: '',
+        websiteOrInstagram: ''
     });
 
     // Sync local state with pageData
@@ -16,12 +18,14 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
             setLocalData({
                 thankYouTitle: pageData.thankYouTitle || '',
                 thankYouMessage: pageData.thankYouMessage || '',
-                contactDetails: pageData.contactDetails || ''
+                phoneNumber: pageData.phoneNumber || '',
+                emailAddress: pageData.emailAddress || '',
+                websiteOrInstagram: pageData.websiteOrInstagram || ''
             });
         }
     }, [pageData]);
 
-    // UPDATED: Handle data changes and immediately notify parent
+    // Handle data changes and immediately notify parent
     const handleDataChange = (field, value) => {
         if (isPreview) return; // Prevent changes in preview mode
         
@@ -38,7 +42,9 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
     const uniqueId = pageId || `thankyou-${pageNumber || Date.now()}`;
     const titleId = `thankYouTitle-${uniqueId}`;
     const messageId = `thankYouMessage-${uniqueId}`;
-    const contactId = `contacts-${uniqueId}`;
+    const phoneId = `phoneNumber-${uniqueId}`;
+    const emailId = `emailAddress-${uniqueId}`;
+    const websiteId = `websiteOrInstagram-${uniqueId}`;
 
     return (
         <div // wrap
@@ -117,7 +123,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                 wordWrap: 'break-word',
                                 whiteSpace: 'pre-wrap'
                             }}>
-                                {localData.thankYouTitle || 'Thank You'}
+                                {localData.thankYouTitle || 'Thank You!'}
                             </div>
                         ) : (
                             // Edit mode - input field
@@ -126,7 +132,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                 id={titleId}
                                 value={localData.thankYouTitle}
                                 onChange={(e) => handleDataChange('thankYouTitle', e.target.value)}
-                                placeholder="Thank You"
+                                placeholder="Thank You!"
                                 style={{
                                     flex: '1 0 0',
                                     color: localData.thankYouTitle ? '#F33F3F' : 'rgba(243, 63, 63, 0.24)',
@@ -177,7 +183,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                 wordWrap: 'break-word',
                                 whiteSpace: 'pre-wrap'
                             }}>
-                                {localData.thankYouMessage || 'Enter your thank you message here...'}
+                                {localData.thankYouMessage || 'Enter Some thank you greeting'}
                             </div>
                         ) : (
                             // Edit mode - textarea
@@ -185,7 +191,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                 value={localData.thankYouMessage}
                                 id={messageId}
                                 onChange={(e) => handleDataChange('thankYouMessage', e.target.value)}
-                                placeholder="Enter your thank you message here..."
+                                placeholder="Enter Some thank you greeting"
                                 rows={6}
                                 style={{
                                     color: localData.thankYouMessage ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.24)',
@@ -228,17 +234,18 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                         }}
                     />
 
-                    {/* Contact Details */}
+                    {/* Contact Details - Individual Fields */}
                     <div
                         style={{ // footer details
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'flex-start',
-                            gap: '4px',
+                            gap: '8px',
                             alignSelf: 'stretch',
                             opacity: 0.42,
                         }}
                     >
+                        {/* Phone Number Field */}
                         <div
                             style={{
                                 display: 'flex',
@@ -248,9 +255,8 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                             }}
                         >
                             {isPreview ? (
-                                // Preview mode - static text
                                 <div style={{
-                                    color: localData.contactDetails ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
+                                    color: localData.phoneNumber ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
                                     fontFamily: 'Lato',
                                     fontSize: '24px',
                                     fontStyle: 'italic',
@@ -260,18 +266,109 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                     wordWrap: 'break-word',
                                     whiteSpace: 'pre-wrap'
                                 }}>
-                                    {localData.contactDetails || '[Phone Number] [Email Address] [Website or Instagram Handle]'}
+                                    {localData.phoneNumber || '[Phone Number]'}
                                 </div>
                             ) : (
-                                // Edit mode - input field
                                 <input
                                     type="text"
-                                    id={contactId}
-                                    value={localData.contactDetails}
-                                    onChange={(e) => handleDataChange('contactDetails', e.target.value)}
-                                    placeholder="[Phone Number] [Email Address] [Website or Instagram Handle]"
+                                    id={phoneId}
+                                    value={localData.phoneNumber}
+                                    onChange={(e) => handleDataChange('phoneNumber', e.target.value)}
+                                    placeholder="[Phone Number]"
                                     style={{
-                                        color: localData.contactDetails ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
+                                        color: localData.phoneNumber ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
+                                        fontFamily: 'Lato',
+                                        fontSize: '24px',
+                                        fontStyle: 'italic',
+                                        fontWeight: 400,
+                                        lineHeight: '36px',
+                                        flex: '1 0 0',
+                                        border: 'none',
+                                        outline: 'none',
+                                        background: 'transparent',
+                                    }}
+                                />
+                            )}
+                        </div>
+
+                        {/* Email Address Field */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                alignSelf: 'stretch',
+                            }}
+                        >
+                            {isPreview ? (
+                                <div style={{
+                                    color: localData.emailAddress ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
+                                    fontFamily: 'Lato',
+                                    fontSize: '24px',
+                                    fontStyle: 'italic',
+                                    fontWeight: 400,
+                                    lineHeight: '36px',
+                                    flex: '1 0 0',
+                                    wordWrap: 'break-word',
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {localData.emailAddress || '[Email Address]'}
+                                </div>
+                            ) : (
+                                <input
+                                    type="email"
+                                    id={emailId}
+                                    value={localData.emailAddress}
+                                    onChange={(e) => handleDataChange('emailAddress', e.target.value)}
+                                    placeholder="[Email Address]"
+                                    style={{
+                                        color: localData.emailAddress ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
+                                        fontFamily: 'Lato',
+                                        fontSize: '24px',
+                                        fontStyle: 'italic',
+                                        fontWeight: 400,
+                                        lineHeight: '36px',
+                                        flex: '1 0 0',
+                                        border: 'none',
+                                        outline: 'none',
+                                        background: 'transparent',
+                                    }}
+                                />
+                            )}
+                        </div>
+
+                        {/* Website or Instagram Handle Field */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                alignSelf: 'stretch',
+                            }}
+                        >
+                            {isPreview ? (
+                                <div style={{
+                                    color: localData.websiteOrInstagram ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
+                                    fontFamily: 'Lato',
+                                    fontSize: '24px',
+                                    fontStyle: 'italic',
+                                    fontWeight: 400,
+                                    lineHeight: '36px',
+                                    flex: '1 0 0',
+                                    wordWrap: 'break-word',
+                                    whiteSpace: 'pre-wrap'
+                                }}>
+                                    {localData.websiteOrInstagram || '[Website or Instagram Handle]'}
+                                </div>
+                            ) : (
+                                <input
+                                    type="text"
+                                    id={websiteId}
+                                    value={localData.websiteOrInstagram}
+                                    onChange={(e) => handleDataChange('websiteOrInstagram', e.target.value)}
+                                    placeholder="[Website or Instagram Handle]"
+                                    style={{
+                                        color: localData.websiteOrInstagram ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
                                         fontFamily: 'Lato',
                                         fontSize: '24px',
                                         fontStyle: 'italic',

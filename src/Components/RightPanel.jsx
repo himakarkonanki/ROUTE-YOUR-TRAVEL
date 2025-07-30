@@ -452,7 +452,7 @@ const sectionTitle = {
 const downArrowIcon = {
   width: '24px',
   height: '24px',
-  transform: 'rotate(360deg)', // Points down
+  transform: 'rotate(90deg)', // Points down
   aspectRatio: '1 / 1',
   userSelect: 'none',
 };
@@ -460,7 +460,7 @@ const downArrowIcon = {
 const upArrowIcon = {
   width: '24px',
   height: '24px',
-  transform: 'rotate(180deg)', // Points up
+  transform: 'rotate(-90deg)', // Points up
   aspectRatio: '1 / 1',
   userSelect: 'none',
 };

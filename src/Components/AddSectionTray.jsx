@@ -15,7 +15,6 @@ const ICON_OPTIONS = {
     CarFront: taxi,
     Hotel: hotel,
     Restaurant: fork_spoon,
-    Table: table,
 };
 
 const SECTION_OPTIONS = [
@@ -24,7 +23,6 @@ const SECTION_OPTIONS = [
     { value: 'CarFront', label: 'Car', heading: 'Transfer' },
     { value: 'Hotel', label: 'Hotel', heading: 'Hotel' },
     { value: 'Restaurant', label: 'Restaurant', heading: 'Dining' },
-    { value: 'Table', label: 'Table', heading: 'Table' },
 ];
 
 function AddSectionTray({ onAddSection }) {

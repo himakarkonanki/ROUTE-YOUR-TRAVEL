@@ -5,9 +5,9 @@ import Footer from './Footer';
 
 const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = false }) => {
     const [localData, setLocalData] = useState({
-        thankYouTitle: pageData?.thankYouTitle || '',
-        thankYouMessage: pageData?.thankYouMessage || '',
-        contactDetails: pageData?.contactDetails || ''
+        thankYouTitle: '',
+        thankYouMessage: '',
+        contactDetails: ''
     });
 
     // Sync local state with pageData
@@ -21,19 +21,17 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
         }
     }, [pageData]);
 
-    // Update parent whenever local state changes (only in edit mode)
-    useEffect(() => {
-        if (!isPreview && onDataChange) {
-            onDataChange(localData);
-        }
-    }, [localData, onDataChange, isPreview]);
-
-    // Handle data changes
+    // UPDATED: Handle data changes and immediately notify parent
     const handleDataChange = (field, value) => {
         if (isPreview) return; // Prevent changes in preview mode
         
         const updatedData = { ...localData, [field]: value };
         setLocalData(updatedData);
+
+        // Immediately call the parent's update function
+        if (onDataChange) {
+            onDataChange(updatedData);
+        }
     };
 
     // Generate unique IDs based on pageId or pageNumber
@@ -125,11 +123,11 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                             // Edit mode - input field
                             <input
                                 type="text"
-                                id={titleId} // Unique ID
+                                id={titleId}
                                 value={localData.thankYouTitle}
                                 onChange={(e) => handleDataChange('thankYouTitle', e.target.value)}
                                 placeholder="Thank You"
-                                style={{ // enter title input field
+                                style={{
                                     flex: '1 0 0',
                                     color: localData.thankYouTitle ? '#F33F3F' : 'rgba(243, 63, 63, 0.24)',
                                     fontFamily: 'Lato',
@@ -160,7 +158,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                         style={{ // span
                             display: 'flex',
                             padding: '8px 16px',
-                            alignItems: 'flex-start', // Changed to flex-start for textarea
+                            alignItems: 'flex-start',
                             alignSelf: 'stretch',
                             borderRadius: '12px',
                         }}
@@ -185,11 +183,11 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                             // Edit mode - textarea
                             <textarea
                                 value={localData.thankYouMessage}
-                                id={messageId} // Unique ID
+                                id={messageId}
                                 onChange={(e) => handleDataChange('thankYouMessage', e.target.value)}
                                 placeholder="Enter your thank you message here..."
                                 rows={6}
-                                style={{ // Enter thanks giving input field
+                                style={{
                                     color: localData.thankYouMessage ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.24)',
                                     fontFamily: 'Lato',
                                     fontSize: '28px',
@@ -268,7 +266,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                 // Edit mode - input field
                                 <input
                                     type="text"
-                                    id={contactId} // Unique ID
+                                    id={contactId}
                                     value={localData.contactDetails}
                                     onChange={(e) => handleDataChange('contactDetails', e.target.value)}
                                     placeholder="[Phone Number] [Email Address] [Website or Instagram Handle]"

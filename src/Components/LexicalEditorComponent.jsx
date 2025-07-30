@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -14,24 +14,19 @@ import { AutoLinkNode, LinkNode } from "@lexical/link";
 import { HashtagNode } from "@lexical/hashtag";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
-import {
-    TableNode,
-    TableCellNode,
-    TableRowNode,
-} from "@lexical/table";
+import { TableNode, TableCellNode, TableRowNode } from "@lexical/table";
 import { $generateNodesFromDOM } from '@lexical/html';
-import { $insertNodes, $getRoot } from 'lexical';
-import "../editor.css";
+import { $insertNodes, $getRoot, $createParagraphNode, $createTextNode } from 'lexical';
 
 function onError(error) {
     console.error("Lexical error:", error);
 }
 
-// Custom paste plugin to preserve formatting
+// Custom paste plugin
 function PastePlugin() {
     const [editor] = useLexicalComposerContext();
 
-    React.useEffect(() => {
+    useEffect(() => {
         const handlePaste = (event) => {
             event.preventDefault();
             
@@ -46,10 +41,9 @@ function PastePlugin() {
                     const nodes = $generateNodesFromDOM(editor, dom);
                     $insertNodes(nodes);
                 } else if (textData) {
-                    const parser = new DOMParser();
-                    const dom = parser.parseFromString(`<p>${textData.replace(/\n/g, '</p><p>')}</p>`, 'text/html');
-                    const nodes = $generateNodesFromDOM(editor, dom);
-                    $insertNodes(nodes);
+                    const paragraph = $createParagraphNode();
+                    paragraph.append($createTextNode(textData));
+                    $insertNodes([paragraph]);
                 }
             });
         };
@@ -69,90 +63,65 @@ function PastePlugin() {
 const exampleTheme = {
     ltr: 'ltr',
     rtl: 'rtl',
-    paragraph: 'editor-paragraph',
-    quote: 'editor-quote',
+    paragraph: 'policy-editor-paragraph',
+    quote: 'policy-editor-quote',
     heading: {
-        h1: 'editor-heading-h1',
-        h2: 'editor-heading-h2',
-        h3: 'editor-heading-h3',
-        h4: 'editor-heading-h4',
-        h5: 'editor-heading-h5',
-        h6: 'editor-heading-h6',
+        h1: 'policy-editor-heading-h1',
+        h2: 'policy-editor-heading-h2',
+        h3: 'policy-editor-heading-h3',
+        h4: 'policy-editor-heading-h4',
+        h5: 'policy-editor-heading-h5',
+        h6: 'policy-editor-heading-h6',
     },
     list: {
         nested: {
-            listitem: 'editor-nested-listitem',
+            listitem: 'policy-editor-nested-listitem',
         },
-        ol: 'editor-list-ol',
-        ul: 'editor-list-ul',
-        listitem: 'editor-listItem',
-        listitemChecked: 'editor-listItemChecked',
-        listitemUnchecked: 'editor-listItemUnchecked',
+        ol: 'policy-editor-list-ol',
+        ul: 'policy-editor-list-ul',
+        listitem: 'policy-editor-listItem',
+        listitemChecked: 'policy-editor-listItemChecked',
+        listitemUnchecked: 'policy-editor-listItemUnchecked',
     },
-    hashtag: 'editor-hashtag',
-    image: 'editor-image',
-    link: 'editor-link',
+    hashtag: 'policy-editor-hashtag',
+    image: 'policy-editor-image',
+    link: 'policy-editor-link',
     text: {
-        bold: 'editor-textBold',
-        code: 'editor-textCode',
-        italic: 'editor-textItalic',
-        strikethrough: 'editor-textStrikethrough',
-        subscript: 'editor-textSubscript',
-        superscript: 'editor-textSuperscript',
-        underline: 'editor-textUnderline',
-        underlineStrikethrough: 'editor-textUnderlineStrikethrough',
+        bold: 'policy-editor-textBold',
+        code: 'policy-editor-textCode',
+        italic: 'policy-editor-textItalic',
+        strikethrough: 'policy-editor-textStrikethrough',
+        subscript: 'policy-editor-textSubscript',
+        superscript: 'policy-editor-textSuperscript',
+        underline: 'policy-editor-textUnderline',
+        underlineStrikethrough: 'policy-editor-textUnderlineStrikethrough',
     },
-    code: 'editor-code',
-    codeHighlight: {
-        atrule: 'editor-tokenAttr',
-        attr: 'editor-tokenAttr',
-        boolean: 'editor-tokenProperty',
-        builtin: 'editor-tokenSelector',
-        cdata: 'editor-tokenComment',
-        char: 'editor-tokenSelector',
-        class: 'editor-tokenFunction',
-        'class-name': 'editor-tokenFunction',
-        comment: 'editor-tokenComment',
-        constant: 'editor-tokenProperty',
-        deleted: 'editor-tokenProperty',
-        doctype: 'editor-tokenComment',
-        entity: 'editor-tokenOperator',
-        function: 'editor-tokenFunction',
-        important: 'editor-tokenVariable',
-        inserted: 'editor-tokenSelector',
-        keyword: 'editor-tokenAttr',
-        namespace: 'editor-tokenVariable',
-        number: 'editor-tokenProperty',
-        operator: 'editor-tokenOperator',
-        prolog: 'editor-tokenComment',
-        property: 'editor-tokenProperty',
-        punctuation: 'editor-tokenPunctuation',
-        regex: 'editor-tokenVariable',
-        selector: 'editor-tokenSelector',
-        string: 'editor-tokenSelector',
-        symbol: 'editor-tokenProperty',
-        tag: 'editor-tokenProperty',
-        url: 'editor-tokenOperator',
-        variable: 'editor-tokenVariable',
-    },
+    code: 'policy-editor-code',
 };
 
-// Main LexicalEditor Component
-function LexicalEditorComponent({ 
+const LexicalEditorComponent = ({ 
     id, 
     type = 'details', 
-    placeholder, 
+    placeholder = 'Enter text...', 
+    initialContent = '', 
     onContentChange, 
-    autoFocus = false,
-    containerStyle = {},
-    editorStyle = {},
-    placeholderStyle = {}
-}) {
+    containerStyle = {}, 
+    editorStyle = {}, 
+    placeholderStyle = {},
+    autoFocus = false 
+}) => {
+    const [uniqueNamespace] = useState(() => `PolicyLexicalEditor-${id}-${type}-${Date.now()}-${Math.random()}`);
+    
     const editorConfig = {
-        namespace: `Editor-${id}-${type}`,
+        namespace: uniqueNamespace,
         theme: exampleTheme,
         onError,
-        editorState: null,
+        editorState: initialContent ? () => {
+            const root = $getRoot();
+            const paragraph = $createParagraphNode();
+            paragraph.append($createTextNode(initialContent));
+            root.append(paragraph);
+        } : null,
         nodes: [
             HeadingNode,
             QuoteNode,
@@ -170,14 +139,13 @@ function LexicalEditorComponent({
     };
 
     const handleEditorChange = (editorState) => {
-        if (onContentChange) {
-            editorState.read(() => {
-                const root = $getRoot();
-                const textContent = root.getTextContent().trim();
-                const newHasContent = textContent.length > 0;
-                onContentChange(id, newHasContent);
-            });
-        }
+        editorState.read(() => {
+            const root = $getRoot();
+            const textContent = root.getTextContent();
+            if (onContentChange) {
+                onContentChange(textContent);
+            }
+        });
     };
 
     const defaultEditorStyle = {
@@ -202,30 +170,40 @@ function LexicalEditorComponent({
     };
 
     return (
-        <LexicalComposer initialConfig={editorConfig}>
-            <div style={{ ...containerStyle, position: 'relative', width: '100%' }}>
+        <div 
+            className="policy-lexical-editor-container" 
+            data-editor-id={id}
+            style={{ 
+                position: 'relative', 
+                width: '100%', 
+                isolation: 'isolate',
+                contain: 'layout style paint',
+                ...containerStyle 
+            }}
+        >
+            <LexicalComposer key={uniqueNamespace} initialConfig={editorConfig}>
                 <RichTextPlugin
                     contentEditable={
                         <ContentEditable style={defaultEditorStyle} />
                     }
                     placeholder={
-                        placeholder && (
+                        placeholder ? (
                             <div style={defaultPlaceholderStyle}>
                                 {placeholder}
                             </div>
-                        )
+                        ) : null
                     }
                     ErrorBoundary={LexicalErrorBoundary}
                 />
                 <OnChangePlugin onChange={handleEditorChange} />
                 <PastePlugin />
-            </div>
-            <HistoryPlugin />
-            {autoFocus && <AutoFocusPlugin />}
-            <ListPlugin />
-            <LinkPlugin />
-        </LexicalComposer>
+                <HistoryPlugin />
+                <ListPlugin />
+                <LinkPlugin />
+                {autoFocus && <AutoFocusPlugin />}
+            </LexicalComposer>
+        </div>
     );
-}
+};
 
 export default LexicalEditorComponent;

@@ -83,7 +83,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
     setShowPreview(false);
   };
 
-  // UPDATED: Page component rendering with complete data passing
+  // FIXED: Page component rendering with correct prop names for all components
   const renderPageComponent = (page, pageNumber) => {
     const pageStyle = {
       position: 'relative',
@@ -91,19 +91,37 @@ function RightPanel({ pages, onPageDataUpdate }) {
       height: '100%',
     };
 
-    // Pass complete page data and update handler
-    const pageProps = {
+    // Create a unified props object that works for all page types
+    const commonProps = {
       pageId: page.id,
       pageNumber: pageNumber,
-      pageData: page, // Pass the entire page object
-      isPreview: false, // This is the editable version in right panel
-      onDataUpdate: (updatedData) => {
-        // Call parent component's update handler for real-time preview updates
-        if (onPageDataUpdate) {
-          onPageDataUpdate(page.id, updatedData);
-        }
-      }
+      pageData: page,
+      isPreview: false,
     };
+
+    // Add the update handler with the correct prop name based on page type
+    let pageProps;
+    if (page.type === 'thankyou') {
+      // ThankYouPage expects onDataChange
+      pageProps = {
+        ...commonProps,
+        onDataChange: (updatedData) => {
+          if (onPageDataUpdate) {
+            onPageDataUpdate(page.id, updatedData);
+          }
+        }
+      };
+    } else {
+      // Other pages expect onDataUpdate
+      pageProps = {
+        ...commonProps,
+        onDataUpdate: (updatedData) => {
+          if (onPageDataUpdate) {
+            onPageDataUpdate(page.id, updatedData);
+          }
+        }
+      };
+    }
 
     let pageContent;
     
@@ -125,8 +143,8 @@ function RightPanel({ pages, onPageDataUpdate }) {
         break;
     }
 
-    // Only show footer for non-cover pages
-    const shouldShowFooter = page.type !== 'cover';
+    // Only show footer for non-cover and non-thankyou pages
+    const shouldShowFooter = page.type !== 'cover' && page.type !== 'thankyou';
 
     return (
       <div style={pageStyle}>

@@ -4,6 +4,7 @@ import RightPanel from './RightPanel'
 import LeftPanel from './LeftPanel'
 
 function LandingPage() {
+  // Remove day page from initial state - only cover and thank you pages by default
   const [pages, setPages] = useState([
     { 
       id: 1, 

@@ -3,7 +3,7 @@ import logo from '../assets/icons/companyLogo.svg';
 import _path from '../assets/icons/_Path_.svg';
 import Footer from './Footer';
 
-const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = false }) => {
+const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = false, totalPages }) => {
     const [localData, setLocalData] = useState({
         thankYouTitle: '',
         thankYouMessage: '',
@@ -386,8 +386,8 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                 </div>
             </div>
 
-            {/* Footer */}
-            <Footer />
+            {/* Footer - UPDATED: Pass totalPages or calculate correct page number */}
+            <Footer pageNumber={totalPages || pageNumber} />
         </div>
     );
 };

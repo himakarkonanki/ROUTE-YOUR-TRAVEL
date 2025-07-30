@@ -11,14 +11,25 @@ import Footer from './Footer'
 function PreviewPane({ onClose, pages }) {
     // Function to render page component based on type
     const renderPageComponent = (page, pageNumber) => {
+
+        let dayNumber = 1;
+        if (page.type === 'day') {
+            const currentPageIndex = pages.findIndex(p => p.id === page.id);
+            const dayPagesBefore = pages.slice(0, currentPageIndex).filter(p => p.type === 'day').length;
+            dayNumber = dayPagesBefore + 1;
+
+            // DEBUG: Add this line to see what's happening
+            console.log(`Page ID: ${page.id}, Index: ${currentPageIndex}, Day Number: ${dayNumber}`);
+        }
         // Pass the entire page data to each component, not just pageId
         const pageProps = {
             pageId: page.id,
             pageNumber: pageNumber,
             pageData: page, // Pass the entire page object with all data
-            isPreview: true, // Flag to indicate this is preview mode
+            isPreview: true,
+            ...(page.type === 'day' && { dayNumber }), // Flag to indicate this is preview mode
         };
-        
+
         switch (page.type) {
             case 'cover':
                 return <FrontPage {...pageProps} />;

@@ -786,7 +786,7 @@ function PolicyPage() {
             </div>
 
             {/* Footer */}
-           <Footer/>
+           <Footer pageNumber={pageNumber} />
         </div>
     )
 }

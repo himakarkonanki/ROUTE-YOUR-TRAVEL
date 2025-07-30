@@ -83,7 +83,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
     setShowPreview(false);
   };
 
-  // FIXED: Page component rendering with correct prop names for all components
+  // UPDATED: Page component rendering with dynamic day numbering and correct prop names
   const renderPageComponent = (page, pageNumber) => {
     const pageStyle = {
       position: 'relative',
@@ -91,12 +91,21 @@ function RightPanel({ pages, onPageDataUpdate }) {
       height: '100%',
     };
 
+    // Calculate day number ONLY for day pages (independent of page number)
+    let dayNumber = 1;
+    if (page.type === 'day') {
+      const currentPageIndex = pages.findIndex(p => p.id === page.id);
+      const dayPagesBefore = pages.slice(0, currentPageIndex).filter(p => p.type === 'day').length;
+      dayNumber = dayPagesBefore + 1;
+    }
+
     // Create a unified props object that works for all page types
     const commonProps = {
       pageId: page.id,
-      pageNumber: pageNumber,
+      pageNumber: pageNumber, // This is the DOCUMENT page number (1, 2, 3, 4...)
       pageData: page,
       isPreview: false,
+      ...(page.type === 'day' && { dayNumber }), // This is the DAY number (DAY 1, DAY 2, DAY 3...)
     };
 
     // Add the update handler with the correct prop name based on page type
@@ -143,12 +152,13 @@ function RightPanel({ pages, onPageDataUpdate }) {
         break;
     }
 
-    // Only show footer for non-cover and non-thankyou pages
+    // Show footer for non-cover and non-thankyou pages
     const shouldShowFooter = page.type !== 'cover' && page.type !== 'thankyou';
 
     return (
       <div style={pageStyle}>
         {pageContent}
+        {/* Footer gets the DOCUMENT page number */}
         {shouldShowFooter && <Footer pageNumber={pageNumber} />}
       </div>
     );
@@ -366,7 +376,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
   );
 }
 
-// Style objects remain the same
+// Style objects
 const iconWrapper = {
   display: 'flex',
   width: '48px',

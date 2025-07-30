@@ -28,12 +28,10 @@ const SECTION_OPTIONS = [
     { value: 'PlaneLanding', label: 'Flight', heading: 'Arrival' },
     { value: 'Landmark', label: 'Activity', heading: 'Activities' },
     { value: 'CarFront', label: 'Car', heading: 'Transfer' },
-    // { value: 'Hotel', label: 'Hotel', heading: 'Hotel' },
-    // { value: 'Restaurant', label: 'Restaurant', heading: 'Dining' },
-    // { value: 'Table', label: 'Meeting', heading: 'Meeting' },
 ];
 
-function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate }) {
+// UPDATED: Add dayNumber prop and calculate it properly
+function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate, dayNumber }) {
     // Initialize local state from pageData
     const [localData, setLocalData] = useState({
         destination: '',
@@ -64,6 +62,9 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
 
     const [openDropdownIndex, setOpenDropdownIndex] = useState(null);
     const dropdownRef = useRef(null);
+
+
+
 
     // Sync local state with incoming pageData when it changes
     useEffect(() => {
@@ -96,6 +97,12 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
             });
         }
     }, [pageData]);
+
+    useEffect(() => {
+        // Force re-render when dayNumber changes
+        // This ensures the component updates when pages are reordered
+    }, [dayNumber]);
+
 
     // Helper to update data and notify parent
     const updateParent = (updatedFields) => {
@@ -171,7 +178,6 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
     };
 
     const renderDropdown = (key, index) => {
-        // Hide dropdown in preview mode
         if (isPreview) return null;
 
         return openDropdownIndex === index ? (
@@ -217,7 +223,6 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                     </div>
                 </div>
 
-                {/* Remove button - hide in preview */}
                 {!isPreview && (
                     <div onClick={() => removeSection(section.id)} style={{ position: 'absolute', top: '8px', right: '8px', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', backgroundColor: 'rgba(243, 63, 63, 0.1)', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onDragStart={e => e.preventDefault()}>
                         <img src={close} alt="remove" width={12} height={12} draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
@@ -231,12 +236,12 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
         <div style={{ display: 'flex', width: '1088px', minHeight: '1540px', flexDirection: 'column', backgroundColor: '#fff', borderRadius: '32px', position: 'relative' }}>
             {/* Main Content Area */}
             <div style={{ display: 'flex', width: '100%', padding: '0 64px', flexDirection: 'column', alignItems: 'center', gap: '32px', flex: 1, paddingBottom: '80px' }}>
-                {/* Image Upload Component - EXACT same rendering in both modes */}
+                {/* Image Upload Component */}
                 {localData.uploadedImage ? (
                     <div style={{
                         display: 'flex',
-                        width: '1088px', // EXACT width as ImageUpload
-                        height: '584px', // EXACT height as ImageUpload
+                        width: '1088px',
+                        height: '584px',
                         justifyContent: 'center',
                         alignItems: 'center',
                         flexShrink: 0,
@@ -244,10 +249,10 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                         overflow: 'hidden',
                         position: 'relative',
                         cursor: isPreview ? 'default' : 'pointer',
-                        marginLeft: '-64px', // Offset the padding to make it full width
+                        marginLeft: '-64px',
                         marginRight: '-64px',
                     }}
-                    onClick={!isPreview ? () => fileInputRef.current?.click() : undefined}
+                        onClick={!isPreview ? () => fileInputRef.current?.click() : undefined}
                     >
                         <img
                             src={localData.uploadedImage}
@@ -295,7 +300,8 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', alignSelf: 'stretch' }}>
                     <div style={{ display: 'flex', padding: '8px 16px', alignItems: 'center', alignSelf: 'stretch', borderRadius: '16px' }}>
                         <div style={{ color: '#0E1328', fontFamily: 'Lato', fontSize: '24px', fontStyle: 'normal', fontWeight: 500, lineHeight: '36px' }}>
-                            DAY {pageNumber || 1}
+                            {/* FIXED: Use dayNumber instead of pageNumber */}
+                            DAY {dayNumber || 1}
                         </div>
                     </div>
 

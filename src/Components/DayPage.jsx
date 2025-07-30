@@ -62,9 +62,13 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
 
     const [openDropdownIndex, setOpenDropdownIndex] = useState(null);
     const dropdownRef = useRef(null);
+    const fileInputRef = useRef(null);
 
-
-
+    // Generate unique IDs based on pageId
+    const getUniqueId = (fieldName, index = null) => {
+        const baseId = `page_${pageId}_${fieldName}`;
+        return index !== null ? `${baseId}_${index}` : baseId;
+    };
 
     // Sync local state with incoming pageData when it changes
     useEffect(() => {
@@ -102,7 +106,6 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
         // Force re-render when dayNumber changes
         // This ensures the component updates when pages are reordered
     }, [dayNumber]);
-
 
     // Helper to update data and notify parent
     const updateParent = (updatedFields) => {
@@ -208,7 +211,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 {section.heading}
                             </div>
                         ) : (
-                            <input type="text" value={section.heading} id='dynamicsectionHeading' onChange={(e) => handleDynamicSectionChange(section.id, 'heading', e.target.value)} style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                            <input 
+                                type="text" 
+                                value={section.heading} 
+                                id={getUniqueId('dynamic_section_heading', section.id)}
+                                name={getUniqueId('dynamic_section_heading', section.id)}
+                                onChange={(e) => handleDynamicSectionChange(section.id, 'heading', e.target.value)} 
+                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                            />
                         )}
                     </div>
 
@@ -218,7 +228,15 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 {section.details || `No ${section.heading.toLowerCase()} details`}
                             </div>
                         ) : (
-                            <input type="text" value={section.details} id='sectionDetails' onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value)} placeholder={`Enter ${section.heading.toLowerCase()} details`} style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                            <input 
+                                type="text" 
+                                value={section.details} 
+                                id={getUniqueId('dynamic_section_details', section.id)}
+                                name={getUniqueId('dynamic_section_details', section.id)}
+                                onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value)} 
+                                placeholder={`Enter ${section.heading.toLowerCase()} details`} 
+                                style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                            />
                         )}
                     </div>
                 </div>
@@ -311,7 +329,15 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 {localData.destination || 'Enter Destination'}
                             </div>
                         ) : (
-                            <input type="text" value={localData.destination} id='location' onChange={(e) => updateParent({ destination: e.target.value })} placeholder="Enter Destination" style={{ color: localData.destination ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '48px', fontStyle: 'normal', fontWeight: 400, lineHeight: '56px', textTransform: 'capitalize', width: '920px', flexShrink: 0, border: 'none', outline: 'none', background: 'transparent' }} />
+                            <input 
+                                type="text" 
+                                value={localData.destination} 
+                                id={getUniqueId('destination')}
+                                name={getUniqueId('destination')}
+                                onChange={(e) => updateParent({ destination: e.target.value })} 
+                                placeholder="Enter Destination" 
+                                style={{ color: localData.destination ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '48px', fontStyle: 'normal', fontWeight: 400, lineHeight: '56px', textTransform: 'capitalize', width: '920px', flexShrink: 0, border: 'none', outline: 'none', background: 'transparent' }} 
+                            />
                         )}
                     </div>
 
@@ -358,7 +384,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.sectionHeadings.arrival}
                                         </div>
                                     ) : (
-                                        <input type="text" id='arrivalHeading' value={localData.sectionHeadings.arrival} onChange={(e) => handleSectionHeadingChange('arrival', e.target.value)} style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                                        <input 
+                                            type="text" 
+                                            id={getUniqueId('arrival_heading')}
+                                            name={getUniqueId('arrival_heading')}
+                                            value={localData.sectionHeadings.arrival} 
+                                            onChange={(e) => handleSectionHeadingChange('arrival', e.target.value)} 
+                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                        />
                                     )}
                                 </div>
 
@@ -368,7 +401,15 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.arrivalDetails || 'No arrival details'}
                                         </div>
                                     ) : (
-                                        <input type="text" id='arrival' value={localData.arrivalDetails} onChange={(e) => updateParent({ arrivalDetails: e.target.value })} placeholder="Enter the arrival details" style={{ color: localData.arrivalDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                                        <input 
+                                            type="text" 
+                                            id={getUniqueId('arrival_details')}
+                                            name={getUniqueId('arrival_details')}
+                                            value={localData.arrivalDetails} 
+                                            onChange={(e) => updateParent({ arrivalDetails: e.target.value })} 
+                                            placeholder="Enter the arrival details" 
+                                            style={{ color: localData.arrivalDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                        />
                                     )}
                                 </div>
                             </div>
@@ -390,7 +431,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.sectionHeadings.transfer}
                                         </div>
                                     ) : (
-                                        <input type="text" id='sectionTransfer' value={localData.sectionHeadings.transfer} onChange={(e) => handleSectionHeadingChange('transfer', e.target.value)} style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                                        <input 
+                                            type="text" 
+                                            id={getUniqueId('transfer_heading')}
+                                            name={getUniqueId('transfer_heading')}
+                                            value={localData.sectionHeadings.transfer} 
+                                            onChange={(e) => handleSectionHeadingChange('transfer', e.target.value)} 
+                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                        />
                                     )}
                                 </div>
 
@@ -400,7 +448,15 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.transferDetails || 'No transfer details'}
                                         </div>
                                     ) : (
-                                        <input type="text" id='transfer' value={localData.transferDetails} onChange={(e) => updateParent({ transferDetails: e.target.value })} placeholder="Enter the transfer details" style={{ color: localData.transferDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                                        <input 
+                                            type="text" 
+                                            id={getUniqueId('transfer_details')}
+                                            name={getUniqueId('transfer_details')}
+                                            value={localData.transferDetails} 
+                                            onChange={(e) => updateParent({ transferDetails: e.target.value })} 
+                                            placeholder="Enter the transfer details" 
+                                            style={{ color: localData.transferDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                        />
                                     )}
                                 </div>
                             </div>
@@ -422,7 +478,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.sectionHeadings.activity}
                                         </div>
                                     ) : (
-                                        <input type="text" id="activity" value={localData.sectionHeadings.activity} onChange={(e) => handleSectionHeadingChange('activity', e.target.value)} style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                                        <input 
+                                            type="text" 
+                                            id={getUniqueId('activity_heading')}
+                                            name={getUniqueId('activity_heading')}
+                                            value={localData.sectionHeadings.activity} 
+                                            onChange={(e) => handleSectionHeadingChange('activity', e.target.value)} 
+                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                        />
                                     )}
                                 </div>
 
@@ -433,7 +496,15 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                                 {activity || `No activity ${index + 1}`}
                                             </div>
                                         ) : (
-                                            <input type="text" id='activityChange' value={activity} onChange={(e) => handleActivityChange(index, e.target.value)} placeholder="Enter activity details" style={{ color: activity ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                                            <input 
+                                                type="text" 
+                                                id={getUniqueId('activity', index)}
+                                                name={getUniqueId('activity', index)}
+                                                value={activity} 
+                                                onChange={(e) => handleActivityChange(index, e.target.value)} 
+                                                placeholder="Enter activity details" 
+                                                style={{ color: activity ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                            />
                                         )}
                                     </div>
                                 ))}
@@ -456,7 +527,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.sectionHeadings.drop}
                                         </div>
                                     ) : (
-                                        <input type="text" id='sectionHeadingDrops' value={localData.sectionHeadings.drop} onChange={(e) => handleSectionHeadingChange('drop', e.target.value)} style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                                        <input 
+                                            type="text" 
+                                            id={getUniqueId('drop_heading')}
+                                            name={getUniqueId('drop_heading')}
+                                            value={localData.sectionHeadings.drop} 
+                                            onChange={(e) => handleSectionHeadingChange('drop', e.target.value)} 
+                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                        />
                                     )}
                                 </div>
 
@@ -466,7 +544,15 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.dropDetails || 'No drop details'}
                                         </div>
                                     ) : (
-                                        <input type="text" id='drop' value={localData.dropDetails} onChange={(e) => updateParent({ dropDetails: e.target.value })} placeholder="Enter the drop details" style={{ color: localData.dropDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} />
+                                        <input 
+                                            type="text" 
+                                            id={getUniqueId('drop_details')}
+                                            name={getUniqueId('drop_details')}
+                                            value={localData.dropDetails} 
+                                            onChange={(e) => updateParent({ dropDetails: e.target.value })} 
+                                            placeholder="Enter the drop details" 
+                                            style={{ color: localData.dropDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                        />
                                     )}
                                 </div>
                             </div>

@@ -16,6 +16,19 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
 
     const fileInputRef = useRef();
 
+    // Generate unique IDs based on pageId to avoid conflicts
+    const uniqueIds = {
+        fileInput: `file-input-${pageId || 'default'}`,
+        destinationInput: `destination-input-${pageId || 'default'}`,
+        tripDurationContainer: `trip-duration-${pageId || 'default'}`,
+        adultsContainer: `adults-container-${pageId || 'default'}`,
+        childrenContainer: `children-container-${pageId || 'default'}`,
+        adultsMinusBtn: `adults-minus-${pageId || 'default'}`,
+        adultsPlusBtn: `adults-plus-${pageId || 'default'}`,
+        childrenMinusBtn: `children-minus-${pageId || 'default'}`,
+        childrenPlusBtn: `children-plus-${pageId || 'default'}`
+    };
+
     // Update local state when pageData changes (for real-time preview updates)
     useEffect(() => {
         setLocalData({
@@ -159,6 +172,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     type="file"
                     accept="image/*"
                     ref={fileInputRef}
+                    id={uniqueIds.fileInput}
                     style={{ display: 'none' }}
                     onChange={handleUpload}
                 />
@@ -211,26 +225,29 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     }}>
                         {isPreview ? (
                             // Read-only display for preview
-                            <div style={{
-                                flex: '1 0 0',
-                                color: '#F33F3F',
-                                fontFamily: 'Lato',
-                                fontSize: '64px',
-                                fontStyle: 'normal',
-                                fontWeight: '400',
-                                lineHeight: '80px',
-                                textTransform: 'capitalize',
-                                minHeight: '80px',
-                                display: 'flex',
-                                alignItems: 'center'
-                            }}>
+                            <div 
+                                id={uniqueIds.destinationInput}
+                                style={{
+                                    flex: '1 0 0',
+                                    color: '#F33F3F',
+                                    fontFamily: 'Lato',
+                                    fontSize: '64px',
+                                    fontStyle: 'normal',
+                                    fontWeight: '400',
+                                    lineHeight: '80px',
+                                    textTransform: 'capitalize',
+                                    minHeight: '80px',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
                                 {localData.destinationName || 'Enter Destination'}
                             </div>
                         ) : (
                             // Editable input for right panel
                             <input
                                 type="text"
-                                id='destination_name'
+                                id={uniqueIds.destinationInput}
                                 name="destination"
                                 value={localData.destinationName}
                                 onChange={(e) => handleDataChange('destinationName', e.target.value)}
@@ -254,15 +271,18 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                 </div>
 
                 {/* Trip Duration */}
-                <div style={{
-                    display: 'flex',
-                    padding: '8px 16px',
-                    alignItems: 'center',
-                    gap: '16px',
-                    alignSelf: 'stretch',
-                    borderRadius: '16px',
-                    height: '64px'
-                }}>
+                <div 
+                    id={uniqueIds.tripDurationContainer}
+                    style={{
+                        display: 'flex',
+                        padding: '8px 16px',
+                        alignItems: 'center',
+                        gap: '16px',
+                        alignSelf: 'stretch',
+                        borderRadius: '16px',
+                        height: '64px'
+                    }}
+                >
                     <div style={{
                         display: 'flex',
                         width: '22%',
@@ -288,15 +308,18 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                 </div>
 
                 {/* Adults section */}
-                <div style={{
-                    display: "flex",
-                    padding: "8px 16px",
-                    alignItems: "center",
-                    gap: "16px",
-                    alignSelf: "stretch",
-                    height: "64px",
-                    borderRadius: "16px"
-                }}>
+                <div 
+                    id={uniqueIds.adultsContainer}
+                    style={{
+                        display: "flex",
+                        padding: "8px 16px",
+                        alignItems: "center",
+                        gap: "16px",
+                        alignSelf: "stretch",
+                        height: "64px",
+                        borderRadius: "16px"
+                    }}
+                >
                     <div style={{
                         display: "flex",
                         alignItems: "center",
@@ -336,6 +359,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     }}>
                         {!isPreview && (
                             <div
+                                id={uniqueIds.adultsMinusBtn}
                                 onClick={() => handleDataChange('adults', Math.max(0, localData.adults - 1))}
                                 style={{ cursor: "pointer" }}
                             >
@@ -352,6 +376,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                         </div>
                         {!isPreview && (
                             <div
+                                id={uniqueIds.adultsPlusBtn}
                                 onClick={() => handleDataChange('adults', localData.adults + 1)}
                                 style={{ cursor: "pointer" }}
                             >
@@ -362,15 +387,18 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                 </div>
 
                 {/* Children section */}
-                <div style={{
-                    display: "flex",
-                    padding: "8px 16px",
-                    alignItems: "center",
-                    gap: "16px",
-                    alignSelf: "stretch",
-                    height: "64px",
-                    borderRadius: "16px"
-                }}>
+                <div 
+                    id={uniqueIds.childrenContainer}
+                    style={{
+                        display: "flex",
+                        padding: "8px 16px",
+                        alignItems: "center",
+                        gap: "16px",
+                        alignSelf: "stretch",
+                        height: "64px",
+                        borderRadius: "16px"
+                    }}
+                >
                     <div style={{
                         display: "flex",
                         alignItems: "center",
@@ -410,6 +438,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     }}>
                         {!isPreview && (
                             <div
+                                id={uniqueIds.childrenMinusBtn}
                                 onClick={() => handleDataChange('children', Math.max(0, localData.children - 1))}
                                 style={{ cursor: "pointer" }}
                             >
@@ -426,6 +455,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                         </div>
                         {!isPreview && (
                             <div
+                                id={uniqueIds.childrenPlusBtn}
                                 onClick={() => handleDataChange('children', localData.children + 1)}
                                 style={{ cursor: "pointer" }}
                             >

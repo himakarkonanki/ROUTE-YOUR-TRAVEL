@@ -26,19 +26,19 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
         }
     }, [pageData]);
 
-      
-    
-      useEffect(() => {
+
+
+    useEffect(() => {
         fetch(Thankyou)
-          .then((res) => res.blob())
-          .then((blob) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              setBase64Image(reader.result); // ✅ base64 string
-            };
-            reader.readAsDataURL(blob);
-          });
-      }, []);
+            .then((res) => res.blob())
+            .then((blob) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setBase64Image(reader.result); // ✅ base64 string
+                };
+                reader.readAsDataURL(blob);
+            });
+    }, []);
 
     // Handle data changes and immediately notify parent
     const handleDataChange = (field, value) => {
@@ -68,7 +68,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
             height: '1540px',
             flexShrink: 0,
             aspectRatio: '272 / 385',
-            
+
         }}>
             <div // wrap
                 style={{
@@ -83,7 +83,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                     flexShrink: 0,
                     background: '#0E1328',
                     position: 'relative',
-                    
+
                 }}
             >
                 <div
@@ -423,10 +423,13 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                     // marginBottom: '70.5px',
                     // // marginLeft: '-100px',
                     // // marginRight: '-90px',
-                    overflow: 'hidden',      
+                    overflow: 'hidden',
                     position: 'relative'
                 }}>
-                    <img src={base64Image} alt="Thank You"/>
+                    {base64Image && (
+                        <img src={base64Image} alt="Thank You" />
+                    )}
+
                 </div>
 
                 {/* Footer - UPDATED: Pass totalPages or calculate correct page number */}

@@ -10,7 +10,7 @@ function Footer({ pageNumber = 1 }) {
       .then((blob) => {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setBase64Image(reader.result); // ✅ base64 string
+          setBase64Image(reader.result); 
         };
         reader.readAsDataURL(blob);
       });
@@ -41,19 +41,22 @@ function Footer({ pageNumber = 1 }) {
           flexShrink: 0,
         }}
       >
-        <img
-          src={base64Image}
-          alt="logo"
-          style={{
-            width: '165.81px',
-            height: '32.415px',
-            flexShrink: 0,
-            aspectRatio: '165.81 / 32.41',
-            userSelect: 'none',
-          }}
-          draggable={false}
-          onDragStart={(e) => e.preventDefault()}
-        />
+        {base64Image && (
+  <img
+    src={base64Image}
+    alt="logo"
+    style={{
+      width: '165.81px',
+      height: '32.415px',
+      flexShrink: 0,
+      aspectRatio: '165.81 / 32.41',
+      userSelect: 'none',
+    }}
+    draggable={false}
+    onDragStart={(e) => e.preventDefault()}
+  />
+)}
+
       </div>
 
       <div

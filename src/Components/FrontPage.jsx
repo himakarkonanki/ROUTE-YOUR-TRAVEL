@@ -139,7 +139,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             fontStyle: "normal",
             fontWeight: 400,
             lineHeight: "32px"
-            
+
         },
         colon: {
             color: "rgba(255, 255, 255, 0.70)",
@@ -182,20 +182,20 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
         });
     }, [pageData]);
 
-        
-    
-      useEffect(() => {
+
+
+    useEffect(() => {
         fetch(company)
-          .then((res) => res.blob())
-          .then((blob) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              setBase64Image(reader.result); // ✅ base64 string
-            };
-            reader.readAsDataURL(blob);
-          });
-      }, []);
-      
+            .then((res) => res.blob())
+            .then((blob) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setBase64Image(reader.result);
+                };
+                reader.readAsDataURL(blob);
+            });
+    }, []);
+
 
     // Memoize callback to prevent unnecessary re-renders
     const handleDataChange = useCallback((field, value) => {
@@ -250,7 +250,10 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             {/* Logo */}
             <div style={styles.logoContainer}>
                 <div style={styles.logoWrapper}>
-                    <img src={base64Image} alt="Company Logo" style={styles.logo} />
+                    {base64Image && (
+                        <img src={base64Image} alt="Company Logo" style={styles.logo} />
+                    )}
+
                 </div>
             </div>
 

@@ -19,7 +19,7 @@ export class PDFGenerator {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
-            const response = await fetch('http://localhost:5000/api/generate-pdf', {
+            const response = await fetch('https://ryt-backend-vjfp.onrender.com/api/generate-pdf', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -10,33 +10,34 @@ function ImageUpload({ onImageUpload, existingImage }) {
 
     const handleFiles = (files) => {
         const file = files[0];
-        if (file) {
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                alert('Please upload only image files (JPEG or PNG)');
-                return;
-            }
+        if (!file) return;
 
-            // Validate file size (2MB)
-            if (file.size > 2 * 1024 * 1024) {
-                alert('File size must be less than 2MB');
-                return;
-            }
-
-            setIsUploading(true);
-
-            // Create preview URL
-            const imageUrl = URL.createObjectURL(file);
-            setUploadedImage(imageUrl);
-
-            // Simulate upload process (replace with actual upload logic)
-            setTimeout(() => {
-                setIsUploading(false);
-                if (onImageUpload) {
-                    onImageUpload(file, imageUrl);
-                }
-            }, 1000);
+        // Validate type
+        if (!file.type.startsWith('image/')) {
+            alert('Please upload only image files (JPEG or PNG)');
+            return;
         }
+
+        // Validate size (2MB max)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('File size must be less than 2MB');
+            return;
+        }
+
+        setIsUploading(true);
+
+        // ✅ Convert to base64 instead of blob URL
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64Image = reader.result;
+            setUploadedImage(base64Image);
+            setIsUploading(false);
+
+            if (onImageUpload) {
+                onImageUpload(file, base64Image); // send base64 to parent
+            }
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleDrag = (e) => {
@@ -53,7 +54,6 @@ function ImageUpload({ onImageUpload, existingImage }) {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             handleFiles(e.dataTransfer.files);
         }
@@ -79,20 +79,19 @@ function ImageUpload({ onImageUpload, existingImage }) {
                 alignItems: 'center',
                 flexShrink: 0,
                 background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.00) 24.03%, rgba(243, 63, 63, 0.06) 100%)',
-                borderRadius: '32px 32px 0 0', // Apply border radius to match parent container
+                borderRadius: '32px 32px 0 0',
             }}
         >
             {uploadedImage ? (
-                // Full image display occupying entire area with border-radius
-                <div 
+                <div
                     style={{
                         display: 'flex',
-                        width: '1088px', // Full container width
-                        height: '584px', // Full container height
+                        width: '1088px',
+                        height: '584px',
                         cursor: 'pointer',
                         position: 'relative',
-                        borderRadius: '32px 32px 0 0', // Match the container border-radius
-                        overflow: 'hidden', // Ensure image respects border-radius
+                        borderRadius: '32px 32px 0 0',
+                        overflow: 'hidden',
                     }}
                     onClick={openFileDialog}
                     onDragEnter={handleDrag}
@@ -100,9 +99,9 @@ function ImageUpload({ onImageUpload, existingImage }) {
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
                 >
-                    <img 
-                        src={uploadedImage} 
-                        alt="Uploaded preview" 
+                    <img
+                        src={uploadedImage}
+                        alt="Uploaded preview"
                         style={{
                             width: '100%',
                             height: '100%',
@@ -111,8 +110,7 @@ function ImageUpload({ onImageUpload, existingImage }) {
                     />
                 </div>
             ) : (
-                // Upload area with padding only when no image
-                <div 
+                <div
                     style={{
                         display: 'flex',
                         width: '1024px',
@@ -124,8 +122,8 @@ function ImageUpload({ onImageUpload, existingImage }) {
                         gap: '32px',
                         flexShrink: 0,
                         borderRadius: '12px',
-                        border: dragActive 
-                            ? '2px solid rgba(243, 63, 63, 1)' 
+                        border: dragActive
+                            ? '2px solid rgba(243, 63, 63, 1)'
                             : '1px dashed rgba(243, 63, 63, 0.64)',
                         backgroundColor: dragActive ? 'rgba(243, 63, 63, 0.05)' : 'transparent',
                         cursor: 'pointer',
@@ -138,7 +136,6 @@ function ImageUpload({ onImageUpload, existingImage }) {
                     onClick={openFileDialog}
                 >
                     {isUploading ? (
-                        // Loading state
                         <div style={{
                             display: 'flex',
                             flexDirection: 'column',
@@ -163,7 +160,6 @@ function ImageUpload({ onImageUpload, existingImage }) {
                             </div>
                         </div>
                     ) : (
-                        // Default upload state
                         <>
                             <div style={{
                                 width: '64px',
@@ -190,7 +186,6 @@ function ImageUpload({ onImageUpload, existingImage }) {
                                         textAlign: 'center',
                                         fontFamily: 'Lato',
                                         fontSize: '24px',
-                                        fontStyle: 'normal',
                                         fontWeight: 600,
                                         lineHeight: '36px',
                                     }}>
@@ -201,7 +196,6 @@ function ImageUpload({ onImageUpload, existingImage }) {
                                         textAlign: 'center',
                                         fontFamily: 'Lato',
                                         fontSize: '24px',
-                                        fontStyle: 'normal',
                                         fontWeight: 600,
                                         lineHeight: '36px',
                                     }}>
@@ -212,7 +206,6 @@ function ImageUpload({ onImageUpload, existingImage }) {
                                         textAlign: 'center',
                                         fontFamily: 'Lato',
                                         fontSize: '16px',
-                                        fontStyle: 'normal',
                                         fontWeight: 400,
                                         lineHeight: '24px',
                                         marginTop: '8px',
@@ -235,7 +228,7 @@ function ImageUpload({ onImageUpload, existingImage }) {
                 style={{ display: 'none' }}
             />
 
-            {/* CSS for loading spinner */}
+            {/* Spinner animation */}
             <style dangerouslySetInnerHTML={{
                 __html: `
                     @keyframes spin {

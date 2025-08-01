@@ -395,6 +395,9 @@ const ReusableTable = ({
                         >
                             <input
                                 type="text"
+                                // ADDED: id and name attributes for header cells
+                                id={`table-header-${colIndex}`}
+                                name={`table-header-${colIndex}`}
                                 value={tableData[0][colIndex]}
                                 onChange={(e) => handleCellChange(0, colIndex, e.target.value)}
                                 placeholder={headerPlaceholder}
@@ -439,6 +442,9 @@ const ReusableTable = ({
                             >
                                 <input
                                     type="text"
+                                    // ADDED: id and name attributes for data cells
+                                    id={`table-cell-${rowIndex + 1}-${colIndex}`}
+                                    name={`table-cell-${rowIndex + 1}-${colIndex}`}
                                     value={cell}
                                     onChange={(e) => handleCellChange(rowIndex + 1, colIndex, e.target.value)}
                                     placeholder={cellPlaceholder}

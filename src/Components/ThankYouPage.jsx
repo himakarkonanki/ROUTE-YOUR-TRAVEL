@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import logo from '../assets/icons/companyLogo.svg';
 import _path from '../assets/icons/_Path_.svg';
-import Thankyou from '../assets/icons/Thank you.png';
+import Thankyou from '../assets/icons/Thankthumbnail.svg';
 import Footer from './Footer';
 
 const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = false, totalPages }) => {
+    const [base64Image, setBase64Image] = useState('');
     const [localData, setLocalData] = useState({
         thankYouTitle: '',
         thankYouMessage: '',
@@ -25,6 +25,20 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
             });
         }
     }, [pageData]);
+
+      
+    
+      useEffect(() => {
+        fetch(Thankyou)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              setBase64Image(reader.result); // ✅ base64 string
+            };
+            reader.readAsDataURL(blob);
+          });
+      }, []);
 
     // Handle data changes and immediately notify parent
     const handleDataChange = (field, value) => {
@@ -54,7 +68,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
             height: '1540px',
             flexShrink: 0,
             aspectRatio: '272 / 385',
-            borderRadius: '32px',
+            
         }}>
             <div // wrap
                 style={{
@@ -69,7 +83,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                     flexShrink: 0,
                     background: '#0E1328',
                     position: 'relative',
-                    borderRadius: '32px',
+                    
                 }}
             >
                 <div
@@ -412,7 +426,7 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                     overflow: 'hidden',      
                     position: 'relative'
                 }}>
-                    <img src={Thankyou} alt="Thank You"/>
+                    <img src={base64Image} alt="Thank You"/>
                 </div>
 
                 {/* Footer - UPDATED: Pass totalPages or calculate correct page number */}

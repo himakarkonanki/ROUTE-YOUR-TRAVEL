@@ -1,32 +1,30 @@
 // AddSectionTray.js
 import React, { useState, useRef, useEffect } from 'react';
-import add from '../assets/icons/add_circle.svg';
+import add from '../assets/icons/add_circle_blue.svg';
 import close from '../assets/icons/close.svg';
 import hotel from '../assets/icons/hotel.svg';
 import fork_spoon from '../assets/icons/fork_spoon.svg';
 import table from '../assets/icons/table.svg';
-import flightland from '../assets/icons/flight_land.svg';
-import interest from '../assets/icons/interests.svg';
-import taxi from '../assets/icons/local_taxi.svg';
+import interest from '../assets/icons/interests_blue.svg';
+import taxi from '../assets/icons/local_taxi_blue.svg';
 
 const ICON_OPTIONS = {
-    PlaneLanding: flightland,
-    Landmark: interest,
-    CarFront: taxi,
-    Hotel: hotel,
     Restaurant: fork_spoon,
+    Hotel: hotel,
+    CarFront: taxi,
+    Landmark: interest,
 };
 
 const SECTION_OPTIONS = [
-    { value: 'PlaneLanding', label: 'Flight', heading: 'Arrival' },
+    { value: 'Restaurant', label: 'Restaurant', heading: 'Dining' },
+    { value: 'Hotel', label: 'Hotel', heading: 'Hotel' },
     { value: 'Landmark', label: 'Activity', heading: 'Activities' },
     { value: 'CarFront', label: 'Car', heading: 'Transfer' },
-    { value: 'Hotel', label: 'Hotel', heading: 'Hotel' },
-    { value: 'Restaurant', label: 'Restaurant', heading: 'Dining' },
 ];
 
 function AddSectionTray({ onAddSection }) {
     const [showAddSectionTray, setShowAddSectionTray] = useState(false);
+    const [hoveredIcon, setHoveredIcon] = useState(null);
     const trayRef = useRef(null);
 
     useEffect(() => {
@@ -105,64 +103,74 @@ function AddSectionTray({ onAddSection }) {
                         gap: '12px',
                         padding: '8px 16px',
                         borderRadius: '40px',
-                        background: '#FFFFFF',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                        background: 'transparent',
                         overflowX: 'auto',
                     }}
                 >
-                    {/* Close icon */}
-                    <img
-                        src={close}
-                        alt="close"
-                        width={20}
-                        height={20}
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setShowAddSectionTray(false)}
-                    />
-
                     {/* Section tiles */}
                     {SECTION_OPTIONS.map(option => (
                         <div
                             key={option.value}
                             onClick={() => handleAddSection(option.value)}
+                            onMouseEnter={() => setHoveredIcon(option.value)}
+                            onMouseLeave={() => setHoveredIcon(null)}
                             style={{
                                 display: 'flex',
-                                flexDirection: 'column',
+                                justifyContent: 'center',
                                 alignItems: 'center',
-                                gap: '6px',
+                                width: '56px',
+                                height: '56px',
+                                borderRadius: '50%',
+                                background: hoveredIcon === option.value ? '#0E1328' : '#F2F4FE',
                                 cursor: 'pointer',
+                                transition: 'background-color 0.2s ease',
                             }}
                         >
-                            {/* Icon holder */}
-                            <div
+                            <img
+                                src={ICON_OPTIONS[option.value]}
+                                alt={option.label}
+                                width={24}
+                                height={24}
                                 style={{
-                                    display: 'flex',
-                                    padding: '16px',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    borderRadius: '28px',
-                                    background: '#F2F4FE',
+                                    filter: hoveredIcon === option.value ? 
+                                        'brightness(0) saturate(100%) invert(100%)' : 
+                                        'none',
+                                    transition: 'filter 0.2s ease',
                                 }}
-                            >
-                                <img
-                                    src={ICON_OPTIONS[option.value]}
-                                    alt={option.label}
-                                    width={24}
-                                    height={24}
-                                />
-                            </div>
-                            <span
-                                style={{
-                                    fontFamily: 'Lato',
-                                    fontSize: '12px',
-                                    fontWeight: 500,
-                                    color: '#374151',
-                                }}
-                            >
-                                {option.label}
-                            </span>
+                            />
                         </div>
                     ))}
+
+                    {/* Close icon - circular with #F2F4FE background */}
+                    <div
+                        style={{
+                            display: 'flex',
+                            width: '56px',
+                            height: '56px',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRadius: '50%',
+                            background: hoveredIcon === 'close' ? '#0E1328' : '#F2F4FE',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease',
+                        }}
+                        onClick={() => setShowAddSectionTray(false)}
+                        onMouseEnter={() => setHoveredIcon('close')}
+                        onMouseLeave={() => setHoveredIcon(null)}
+                    >
+                        <img
+                            src={close}
+                            alt="close"
+                            width={24}
+                            height={24}
+                            style={{
+                                filter: hoveredIcon === 'close' ? 
+                                    'brightness(0) saturate(100%) invert(100%)' : 
+                                    'none',
+                                transition: 'filter 0.2s ease',
+                            }}
+                        />
+                    </div>
                 </div>
             )}
         </div>

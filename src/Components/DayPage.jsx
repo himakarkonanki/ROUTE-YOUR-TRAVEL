@@ -3,9 +3,7 @@ import close from '../assets/icons/close.svg'
 import hotel from '../assets/icons/hotel.svg'
 import fork_spoon from '../assets/icons/fork_spoon.svg'
 import table from '../assets/icons/table.svg'
-import logo from '../assets/icons/companyLogo.svg'
 
-// Icon Dropdown Imports
 import flightland from '../assets/icons/flight_land.svg'
 import interest from '../assets/icons/interests.svg'
 import taxi from '../assets/icons/local_taxi.svg'
@@ -30,7 +28,6 @@ const SECTION_OPTIONS = [
     { value: 'CarFront', label: 'Car', heading: 'Transfer' },
 ];
 
-// UPDATED: Add dayNumber prop and calculate it properly
 function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate, dayNumber }) {
     // Initialize local state from pageData
     const [localData, setLocalData] = useState({
@@ -211,13 +208,13 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 {section.heading}
                             </div>
                         ) : (
-                            <input 
-                                type="text" 
-                                value={section.heading} 
+                            <input
+                                type="text"
+                                value={section.heading}
                                 id={getUniqueId('dynamic_section_heading', section.id)}
                                 name={getUniqueId('dynamic_section_heading', section.id)}
-                                onChange={(e) => handleDynamicSectionChange(section.id, 'heading', e.target.value)} 
-                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                onChange={(e) => handleDynamicSectionChange(section.id, 'heading', e.target.value)}
+                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
@@ -228,14 +225,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 {section.details || `No ${section.heading.toLowerCase()} details`}
                             </div>
                         ) : (
-                            <input 
-                                type="text" 
-                                value={section.details} 
+                            <input
+                                type="text"
+                                value={section.details}
                                 id={getUniqueId('dynamic_section_details', section.id)}
                                 name={getUniqueId('dynamic_section_details', section.id)}
-                                onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value)} 
-                                placeholder={`Enter ${section.heading.toLowerCase()} details`} 
-                                style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value)}
+                                placeholder={`Enter ${section.heading.toLowerCase()} details`}
+                                style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
@@ -251,7 +248,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
     };
 
     return (
-        <div style={{ display: 'flex', width: '1088px', minHeight: '1540px', flexDirection: 'column', backgroundColor: '#fff', borderRadius: '32px', position: 'relative' }}>
+        <div style={{ display: 'flex', width: '1088px', minHeight: '1540px', flexDirection: 'column', backgroundColor: '#fff', position: 'relative' }}>
             {/* Main Content Area */}
             <div style={{ display: 'flex', width: '100%', padding: '0 64px', flexDirection: 'column', alignItems: 'center', gap: '32px', flex: 1, paddingBottom: '80px' }}>
                 {/* Image Upload Component */}
@@ -263,7 +260,6 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                         justifyContent: 'center',
                         alignItems: 'center',
                         flexShrink: 0,
-                        borderRadius: '32px 32px 0 0',
                         overflow: 'hidden',
                         position: 'relative',
                         cursor: isPreview ? 'default' : 'pointer',
@@ -318,7 +314,6 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', alignSelf: 'stretch' }}>
                     <div style={{ display: 'flex', padding: '8px 16px', alignItems: 'center', alignSelf: 'stretch', borderRadius: '16px' }}>
                         <div style={{ color: '#0E1328', fontFamily: 'Lato', fontSize: '24px', fontStyle: 'normal', fontWeight: 500, lineHeight: '36px' }}>
-                            {/* FIXED: Use dayNumber instead of pageNumber */}
                             DAY {dayNumber || 1}
                         </div>
                     </div>
@@ -329,40 +324,68 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 {localData.destination || 'Enter Destination'}
                             </div>
                         ) : (
-                            <input 
-                                type="text" 
-                                value={localData.destination} 
+                            <input
+                                type="text"
+                                value={localData.destination}
                                 id={getUniqueId('destination')}
                                 name={getUniqueId('destination')}
-                                onChange={(e) => updateParent({ destination: e.target.value })} 
-                                placeholder="Enter Destination" 
-                                style={{ color: localData.destination ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '48px', fontStyle: 'normal', fontWeight: 400, lineHeight: '56px', textTransform: 'capitalize', width: '920px', flexShrink: 0, border: 'none', outline: 'none', background: 'transparent' }} 
+                                onChange={(e) => updateParent({ destination: e.target.value })}
+                                placeholder="Enter Destination"
+                                style={{ color: localData.destination ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '48px', fontStyle: 'normal', fontWeight: 400, lineHeight: '56px', textTransform: 'capitalize', width: '920px', flexShrink: 0, border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
 
-                    {/* Meal Options */}
+                    {/* UPDATED: Meal Options - Hide unselected meals, show tick for selected but transparent background in preview */}
                     <div style={{ display: 'flex', padding: '8px 16px', alignItems: 'center', gap: '12px', alignSelf: 'stretch', borderRadius: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                            {['breakfast', 'lunch', 'dinner'].map((meal) => {
-                                const selected = localData.mealSelections[meal];
-                                return (
-                                    <div key={meal} onClick={!isPreview ? () => handleMealToggle(meal) : undefined} style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', borderRadius: '999px', gap: '8px', backgroundColor: selected ? '#FFFFFF' : '#F4F4F6', border: '1px solid transparent', cursor: isPreview ? 'default' : 'pointer', boxShadow: selected ? '0 0 0 1px rgba(0,0,0,0.04)' : 'none', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onDragStart={e => e.preventDefault()}>
-                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: selected ? 'none' : '2px solid #A3A3A3', backgroundColor: selected ? '#0E1328' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
-                                            {selected && (
-                                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                                    <path d="M3 6.2L5 8.2L9 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                            )}
+                            {['breakfast', 'lunch', 'dinner']
+                                .filter(meal => {
+                                    // In preview mode: only show selected meals
+                                    // In edit mode: show all meals
+                                    return isPreview ? localData.mealSelections[meal] : true;
+                                })
+                                .map((meal) => {
+                                    const selected = localData.mealSelections[meal];
+                                    return (
+                                        <div
+                                            key={meal}
+                                            onClick={!isPreview ? () => handleMealToggle(meal) : undefined}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                padding: '8px 16px',
+                                                borderRadius: '999px',
+                                                gap: '8px',
+                                                // UPDATED: Transparent background in preview mode, normal background in edit mode
+                                                backgroundColor: isPreview ? 'transparent' : (selected ? '#FFFFFF' : '#F4F4F6'),
+                                                border: '1px solid transparent',
+                                                cursor: isPreview ? 'default' : 'pointer',
+                                                boxShadow: (selected && !isPreview) ? '0 0 0 1px rgba(0,0,0,0.04)' : 'none',
+                                                userSelect: 'none',
+                                                WebkitUserSelect: 'none',
+                                                MozUserSelect: 'none',
+                                                msUserSelect: 'none'
+                                            }}
+                                            onDragStart={e => e.preventDefault()}
+                                        >
+                                            {/* UPDATED: Show checkmark circle for selected meals in both edit and preview modes */}
+                                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: selected ? 'none' : '2px solid #A3A3A3', backgroundColor: selected ? '#0E1328' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}>
+                                                {selected && (
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                                        <path d="M3 6.2L5 8.2L9 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <span style={{ fontFamily: 'Lato', fontSize: '16px', fontWeight: '600', textTransform: 'uppercase', color: selected ? '#0E1328' : '#A3A3A3', userSelect: 'none' }}>
+                                                {meal}
+                                            </span>
                                         </div>
-                                        <span style={{ fontFamily: 'Lato', fontSize: '16px', fontWeight: '600', textTransform: 'uppercase', color: selected ? '#0E1328' : '#A3A3A3', userSelect: 'none' }}>
-                                            {meal}
-                                        </span>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
                         </div>
                     </div>
+
                 </div>
 
                 {/* Main Content Frame */}
@@ -370,10 +393,10 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px', alignSelf: 'stretch' }}>
                         {/* Arrival Section */}
                         <div style={{ display: 'flex', width: '928px', padding: '4px', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', position: 'relative', cursor: isPreview ? 'default' : 'pointer', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === 0 ? null : 0) : undefined} onDragStart={e => e.preventDefault()}>
-                                <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1', userSelect: 'none' }}>
-                                    <img src={ICON_OPTIONS[localData.icons.arrival]} alt='arrival' draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
-                                </div>
+                            <div style={{ display: 'inline-flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', position: 'relative', cursor: isPreview ? 'default' : 'pointer', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === 0 ? null : 0) : undefined} onDragStart={e => e.preventDefault()}>
+                                {/* <div style={{  }}> */}
+                                    <img src={ICON_OPTIONS[localData.icons.arrival]} alt='arrival' draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none', width: '20px', height: '20px', aspectRatio: '1 / 1'}} />
+                                {/* </div> */}
                                 {renderDropdown('arrival', 0)}
                             </div>
 
@@ -384,13 +407,13 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.sectionHeadings.arrival}
                                         </div>
                                     ) : (
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             id={getUniqueId('arrival_heading')}
                                             name={getUniqueId('arrival_heading')}
-                                            value={localData.sectionHeadings.arrival} 
-                                            onChange={(e) => handleSectionHeadingChange('arrival', e.target.value)} 
-                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                            value={localData.sectionHeadings.arrival}
+                                            onChange={(e) => handleSectionHeadingChange('arrival', e.target.value)}
+                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                         />
                                     )}
                                 </div>
@@ -401,14 +424,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.arrivalDetails || 'No arrival details'}
                                         </div>
                                     ) : (
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             id={getUniqueId('arrival_details')}
                                             name={getUniqueId('arrival_details')}
-                                            value={localData.arrivalDetails} 
-                                            onChange={(e) => updateParent({ arrivalDetails: e.target.value })} 
-                                            placeholder="Enter the arrival details" 
-                                            style={{ color: localData.arrivalDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                            value={localData.arrivalDetails}
+                                            onChange={(e) => updateParent({ arrivalDetails: e.target.value })}
+                                            placeholder="Enter the arrival details"
+                                            style={{ color: localData.arrivalDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                         />
                                     )}
                                 </div>
@@ -417,7 +440,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
 
                         {/* Transfer Section */}
                         <div style={{ display: 'flex', width: '928px', padding: '4px', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', position: 'relative', cursor: isPreview ? 'default' : 'pointer', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === 1 ? null : 1) : undefined} onDragStart={e => e.preventDefault()}>
+                            <div style={{ display: 'inline-flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', position: 'relative', cursor: isPreview ? 'default' : 'pointer', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === 1 ? null : 1) : undefined} onDragStart={e => e.preventDefault()}>
                                 <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1', userSelect: 'none' }}>
                                     <img src={ICON_OPTIONS[localData.icons.transfer]} alt='transfer' draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
                                 </div>
@@ -431,13 +454,13 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.sectionHeadings.transfer}
                                         </div>
                                     ) : (
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             id={getUniqueId('transfer_heading')}
                                             name={getUniqueId('transfer_heading')}
-                                            value={localData.sectionHeadings.transfer} 
-                                            onChange={(e) => handleSectionHeadingChange('transfer', e.target.value)} 
-                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                            value={localData.sectionHeadings.transfer}
+                                            onChange={(e) => handleSectionHeadingChange('transfer', e.target.value)}
+                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                         />
                                     )}
                                 </div>
@@ -448,14 +471,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.transferDetails || 'No transfer details'}
                                         </div>
                                     ) : (
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             id={getUniqueId('transfer_details')}
                                             name={getUniqueId('transfer_details')}
-                                            value={localData.transferDetails} 
-                                            onChange={(e) => updateParent({ transferDetails: e.target.value })} 
-                                            placeholder="Enter the transfer details" 
-                                            style={{ color: localData.transferDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                            value={localData.transferDetails}
+                                            onChange={(e) => updateParent({ transferDetails: e.target.value })}
+                                            placeholder="Enter the transfer details"
+                                            style={{ color: localData.transferDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                         />
                                     )}
                                 </div>
@@ -464,7 +487,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
 
                         {/* Activities Section */}
                         <div style={{ display: 'flex', padding: '0 4px', alignItems: 'flex-start', alignSelf: 'stretch' }}>
-                            <div style={{ display: 'flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', position: 'relative', cursor: isPreview ? 'default' : 'pointer', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === 2 ? null : 2) : undefined} onDragStart={e => e.preventDefault()}>
+                            <div style={{ display: 'inline-flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', position: 'relative', cursor: isPreview ? 'default' : 'pointer', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === 2 ? null : 2) : undefined} onDragStart={e => e.preventDefault()}>
                                 <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1', userSelect: 'none' }}>
                                     <img src={ICON_OPTIONS[localData.icons.activity]} alt='activity' draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
                                 </div>
@@ -478,13 +501,13 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.sectionHeadings.activity}
                                         </div>
                                     ) : (
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             id={getUniqueId('activity_heading')}
                                             name={getUniqueId('activity_heading')}
-                                            value={localData.sectionHeadings.activity} 
-                                            onChange={(e) => handleSectionHeadingChange('activity', e.target.value)} 
-                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                            value={localData.sectionHeadings.activity}
+                                            onChange={(e) => handleSectionHeadingChange('activity', e.target.value)}
+                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                         />
                                     )}
                                 </div>
@@ -496,14 +519,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                                 {activity || `No activity ${index + 1}`}
                                             </div>
                                         ) : (
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 id={getUniqueId('activity', index)}
                                                 name={getUniqueId('activity', index)}
-                                                value={activity} 
-                                                onChange={(e) => handleActivityChange(index, e.target.value)} 
-                                                placeholder="Enter activity details" 
-                                                style={{ color: activity ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                                value={activity}
+                                                onChange={(e) => handleActivityChange(index, e.target.value)}
+                                                placeholder="Enter activity details"
+                                                style={{ color: activity ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                             />
                                         )}
                                     </div>
@@ -513,7 +536,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
 
                         {/* Drop Section */}
                         <div style={{ display: 'flex', width: '928px', padding: '4px', alignItems: 'flex-start' }}>
-                            <div style={{ display: 'flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', position: 'relative', cursor: isPreview ? 'default' : 'pointer', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === 3 ? null : 3) : undefined} onDragStart={e => e.preventDefault()}>
+                            <div style={{ display: 'inline-flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', position: 'relative', cursor: isPreview ? 'default' : 'pointer', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === 3 ? null : 3) : undefined} onDragStart={e => e.preventDefault()}>
                                 <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1', userSelect: 'none' }}>
                                     <img src={ICON_OPTIONS[localData.icons.drop]} alt='drop' draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
                                 </div>
@@ -527,13 +550,13 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.sectionHeadings.drop}
                                         </div>
                                     ) : (
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             id={getUniqueId('drop_heading')}
                                             name={getUniqueId('drop_heading')}
-                                            value={localData.sectionHeadings.drop} 
-                                            onChange={(e) => handleSectionHeadingChange('drop', e.target.value)} 
-                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                            value={localData.sectionHeadings.drop}
+                                            onChange={(e) => handleSectionHeadingChange('drop', e.target.value)}
+                                            style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                         />
                                     )}
                                 </div>
@@ -544,14 +567,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                             {localData.dropDetails || 'No drop details'}
                                         </div>
                                     ) : (
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             id={getUniqueId('drop_details')}
                                             name={getUniqueId('drop_details')}
-                                            value={localData.dropDetails} 
-                                            onChange={(e) => updateParent({ dropDetails: e.target.value })} 
-                                            placeholder="Enter the drop details" 
-                                            style={{ color: localData.dropDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }} 
+                                            value={localData.dropDetails}
+                                            onChange={(e) => updateParent({ dropDetails: e.target.value })}
+                                            placeholder="Enter the drop details"
+                                            style={{ color: localData.dropDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                         />
                                     )}
                                 </div>

@@ -1,7 +1,21 @@
-import React from 'react';
-import logo from '../assets/icons/companyLogo.svg';
+import React, { useEffect, useState } from 'react';
+import logo from '../assets/icons/companyLogo.svg'
 
 function Footer({ pageNumber = 1 }) {
+    const [base64Image, setBase64Image] = useState('');
+
+  useEffect(() => {
+    fetch(logo)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setBase64Image(reader.result); // ✅ base64 string
+        };
+        reader.readAsDataURL(blob);
+      });
+  }, []);
+  
   return (
     <div
       style={{
@@ -14,7 +28,6 @@ function Footer({ pageNumber = 1 }) {
         position: 'absolute',
         bottom: 0,
         left: 0,
-        borderRadius: '0 0 32px 32px',
       }}
     >
       <div
@@ -29,7 +42,7 @@ function Footer({ pageNumber = 1 }) {
         }}
       >
         <img
-          src={logo}
+          src={base64Image}
           alt="logo"
           style={{
             width: '165.81px',

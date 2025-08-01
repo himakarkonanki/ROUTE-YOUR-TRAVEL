@@ -1,461 +1,365 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import add from '../assets/icons/add_2.svg'
 import logo from '../assets/icons/companyLogo.svg'
 import table from '../assets/icons/table.svg'
 import title from '../assets/icons/title.svg'
-import ReusableTable from './ReusableTable' // Import the reusable table component
-import { LexicalComposer } from "@lexical/react/LexicalComposer";
-import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
-import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
-import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
-import { ListNode, ListItemNode } from "@lexical/list";
-import { CodeNode, CodeHighlightNode } from "@lexical/code";
-import { AutoLinkNode, LinkNode } from "@lexical/link";
-import { HashtagNode } from "@lexical/hashtag";
-import { ListPlugin } from "@lexical/react/LexicalListPlugin";
-import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
-import {
-    TableNode,
-    TableCellNode,
-    TableRowNode,
-} from "@lexical/table";
-import { $generateNodesFromDOM } from '@lexical/html';
-import { $insertNodes, $getRoot } from 'lexical';
-import "../editor.css";
+import ReusableTable from './ReusableTable'
 import Footer from './Footer'
+import TipTapEditor from './TipTapEditor'
+import PolicyPagePreview from './PolicyPagePreview'
 
-function onError(error) {
-    console.error("Lexical error:", error);
-}
-
-// Custom paste plugin to preserve formatting
-function PastePlugin() {
-    const [editor] = useLexicalComposerContext();
-
-    React.useEffect(() => {
-        const handlePaste = (event) => {
-            event.preventDefault();
-            
-            const clipboardData = event.clipboardData || window.clipboardData;
-            const htmlData = clipboardData.getData('text/html');
-            const textData = clipboardData.getData('text/plain');
-
-            editor.update(() => {
-                if (htmlData) {
-                    const parser = new DOMParser();
-                    const dom = parser.parseFromString(htmlData, 'text/html');
-                    const nodes = $generateNodesFromDOM(editor, dom);
-                    $insertNodes(nodes);
-                } else if (textData) {
-                    const parser = new DOMParser();
-                    const dom = parser.parseFromString(`<p>${textData.replace(/\n/g, '</p><p>')}</p>`, 'text/html');
-                    const nodes = $generateNodesFromDOM(editor, dom);
-                    $insertNodes(nodes);
-                }
-            });
-        };
-
-        const editorElement = editor.getRootElement();
-        if (editorElement) {
-            editorElement.addEventListener('paste', handlePaste);
-            return () => {
-                editorElement.removeEventListener('paste', handlePaste);
-            };
-        }
-    }, [editor]);
-
-    return null;
-}
-
-const exampleTheme = {
-    ltr: 'ltr',
-    rtl: 'rtl',
-    paragraph: 'editor-paragraph',
-    quote: 'editor-quote',
-    heading: {
-        h1: 'editor-heading-h1',
-        h2: 'editor-heading-h2',
-        h3: 'editor-heading-h3',
-        h4: 'editor-heading-h4',
-        h5: 'editor-heading-h5',
-        h6: 'editor-heading-h6',
-    },
-    list: {
-        nested: {
-            listitem: 'editor-nested-listitem',
+// Icon Tray Component - Optimized with memoization
+const IconTray = React.memo(({ onSelectType, onClose }) => {
+    const iconTrayStyles = useMemo(() => ({
+        container: {
+            position: 'absolute',
+            left: '-70px',
+            top: '0px',
+            display: 'inline-flex',
+            flexDirection: 'column',
+            padding: '12px',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '6px',
+            borderRadius: '28px',
+            background: '#F2F4FE',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+            zIndex: 100,
+            minWidth: '60px',
         },
-        ol: 'editor-list-ol',
-        ul: 'editor-list-ul',
-        listitem: 'editor-listItem',
-        listitemChecked: 'editor-listItemChecked',
-        listitemUnchecked: 'editor-listItemUnchecked',
-    },
-    hashtag: 'editor-hashtag',
-    image: 'editor-image',
-    link: 'editor-link',
-    text: {
-        bold: 'editor-textBold',
-        code: 'editor-textCode',
-        italic: 'editor-textItalic',
-        strikethrough: 'editor-textStrikethrough',
-        subscript: 'editor-textSubscript',
-        superscript: 'editor-textSuperscript',
-        underline: 'editor-textUnderline',
-        underlineStrikethrough: 'editor-textUnderlineStrikethrough',
-    },
-    code: 'editor-code',
-    codeHighlight: {
-        atrule: 'editor-tokenAttr',
-        attr: 'editor-tokenAttr',
-        boolean: 'editor-tokenProperty',
-        builtin: 'editor-tokenSelector',
-        cdata: 'editor-tokenComment',
-        char: 'editor-tokenSelector',
-        class: 'editor-tokenFunction',
-        'class-name': 'editor-tokenFunction',
-        comment: 'editor-tokenComment',
-        constant: 'editor-tokenProperty',
-        deleted: 'editor-tokenProperty',
-        doctype: 'editor-tokenComment',
-        entity: 'editor-tokenOperator',
-        function: 'editor-tokenFunction',
-        important: 'editor-tokenVariable',
-        inserted: 'editor-tokenSelector',
-        keyword: 'editor-tokenAttr',
-        namespace: 'editor-tokenVariable',
-        number: 'editor-tokenProperty',
-        operator: 'editor-tokenOperator',
-        prolog: 'editor-tokenComment',
-        property: 'editor-tokenProperty',
-        punctuation: 'editor-tokenPunctuation',
-        regex: 'editor-tokenVariable',
-        selector: 'editor-tokenSelector',
-        string: 'editor-tokenSelector',
-        symbol: 'editor-tokenProperty',
-        tag: 'editor-tokenProperty',
-        url: 'editor-tokenOperator',
-        variable: 'editor-tokenVariable',
-    },
-};
+        iconButton: {
+            display: 'flex',
+            width: '36px',
+            height: '36px',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: '12px',
+            background: '#FFFFFF',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        },
+        icon: {
+            width: '16px',
+            height: '16px',
+            transition: 'filter 0.2s ease'
+        },
+        titleText: {
+            fontSize: '18px',
+            fontWeight: 'bold',
+            color: '#6B7280',
+            fontFamily: 'Lato',
+            transition: 'color 0.2s ease',
+        }
+    }), []);
 
-// Icon Tray Component - Vertical layout positioned outside dashed border
-function IconTray({ onSelectType, onClose }) {
+    const handleMouseEnter = useCallback((e, isTitle = false) => {
+        e.currentTarget.style.background = '#0E1328';
+        e.currentTarget.style.transform = 'scale(1.05)';
+        
+        if (isTitle) {
+            const tText = e.currentTarget.querySelector('.t-text');
+            if (tText) tText.style.color = '#FFFFFF';
+        } else {
+            const icon = e.currentTarget.querySelector('img');
+            if (icon) icon.style.filter = 'brightness(0) invert(1)';
+        }
+    }, []);
+
+    const handleMouseLeave = useCallback((e, isTitle = false) => {
+        e.currentTarget.style.background = '#FFFFFF';
+        e.currentTarget.style.transform = 'scale(1)';
+        
+        if (isTitle) {
+            const tText = e.currentTarget.querySelector('.t-text');
+            if (tText) tText.style.color = '#6B7280';
+        } else {
+            const icon = e.currentTarget.querySelector('img');
+            if (icon) icon.style.filter = 'none';
+        }
+    }, []);
+
     return (
-        <div
-            style={{
-                position: 'absolute',
-                left: '-70px',
-                top: '0px',
-                display: 'inline-flex',
-                flexDirection: 'column',
-                padding: '12px',
-                justifyContent: 'center',
-                alignItems: 'center',
-                gap: '6px',
-                borderRadius: '28px',
-                background: '#F2F4FE',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                zIndex: 100,
-                minWidth: '60px',
-            }}
-        >
+        <div style={iconTrayStyles.container}>
             {/* Details Icon */}
             <div
-                style={{
-                    display: 'flex',
-                    width: '36px',
-                    height: '36px',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: '12px',
-                    background: '#FFFFFF',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-                }}
+                style={iconTrayStyles.iconButton}
                 onClick={() => onSelectType('details')}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#0E1328';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    const icon = e.currentTarget.querySelector('img');
-                    if (icon) {
-                        icon.style.filter = 'brightness(0) invert(1)';
-                    }
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#FFFFFF';
-                    e.currentTarget.style.transform = 'scale(1)';
-                    const icon = e.currentTarget.querySelector('img');
-                    if (icon) {
-                        icon.style.filter = 'none';
-                    }
-                }}
+                onMouseEnter={(e) => handleMouseEnter(e)}
+                onMouseLeave={(e) => handleMouseLeave(e)}
             >
-                <img 
-                    src={add} 
-                    alt='details icon' 
-                    style={{ 
-                        width: '16px', 
-                        height: '16px',
-                        transition: 'filter 0.2s ease'
-                    }} 
-                />
+                <img src={add} alt='details icon' style={iconTrayStyles.icon} />
             </div>
 
-            {/* Title Icon - T */}
+            {/* Title Icon */}
             <div
-                style={{
-                    display: 'flex',
-                    width: '36px',
-                    height: '36px',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: '12px',
-                    background: '#FFFFFF',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-                }}
+                style={iconTrayStyles.iconButton}
                 onClick={() => onSelectType('title')}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#0E1328';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    const tText = e.currentTarget.querySelector('.t-text');
-                    if (tText) tText.style.color = '#FFFFFF';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#FFFFFF';
-                    e.currentTarget.style.transform = 'scale(1)';
-                    const tText = e.currentTarget.querySelector('.t-text');
-                    if (tText) tText.style.color = '#6B7280';
-                }}
+                onMouseEnter={(e) => handleMouseEnter(e, true)}
+                onMouseLeave={(e) => handleMouseLeave(e, true)}
             >
-                <div
-                    className="t-text"
-                    style={{
-                        fontSize: '18px',
-                        fontWeight: 'bold',
-                        color: '#6B7280',
-                        fontFamily: 'Lato',
-                        transition: 'color 0.2s ease',
-                    }}
-                >
-                    T
-                </div>
+                <div className="t-text" style={iconTrayStyles.titleText}>T</div>
             </div>
 
             {/* Table Icon */}
             <div
-                style={{
-                    display: 'flex',
-                    width: '36px',
-                    height: '36px',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: '12px',
-                    background: '#FFFFFF',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-                }}
+                style={iconTrayStyles.iconButton}
                 onClick={() => onSelectType('table')}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#0E1328';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    const icon = e.currentTarget.querySelector('img');
-                    if (icon) {
-                        icon.style.filter = 'brightness(0) invert(1)';
-                    }
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#FFFFFF';
-                    e.currentTarget.style.transform = 'scale(1)';
-                    const icon = e.currentTarget.querySelector('img');
-                    if (icon) {
-                        icon.style.filter = 'none';
-                    }
-                }}
+                onMouseEnter={(e) => handleMouseEnter(e)}
+                onMouseLeave={(e) => handleMouseLeave(e)}
             >
-                <img 
-                    src={table} 
-                    alt='table icon' 
-                    style={{ 
-                        width: '16px', 
-                        height: '16px',
-                        transition: 'filter 0.2s ease'
-                    }} 
-                />
+                <img src={table} alt='table icon' style={iconTrayStyles.icon} />
             </div>
         </div>
     );
-}
+});
 
-// Reusable Detail Editor Component
-function DetailEditor({ id, type = 'details', onAddNew, showPlusIcon, hasContent, onContentChange, onRemove }) {
+// DetailEditor component - Fixed and optimized
+const DetailEditor = React.memo(({ 
+    id, 
+    type = 'details', 
+    onAddNew, 
+    onReplace,
+    showPlusIcon, 
+    hasContent, 
+    onContentChange, 
+    onRemove, 
+    initialValue = '',
+    pageId,
+    fieldIndex
+}) => {
     const [showIconTray, setShowIconTray] = useState(false);
+    const [value, setValue] = useState(initialValue);
+    const debounceTimeoutRef = useRef(null);
+    const editorRef = useRef(null);
+    const isUpdatingRef = useRef(false);
 
-    const detailConfig = {
-        namespace: `DetailEditor-${id}`,
-        theme: exampleTheme,
-        onError,
-        editorState: null,
-        nodes: [
-            HeadingNode,
-            QuoteNode,
-            ListNode,
-            ListItemNode,
-            CodeNode,
-            CodeHighlightNode,
-            AutoLinkNode,
-            LinkNode,
-            HashtagNode,
-            TableNode,
-            TableCellNode,
-            TableRowNode,
-        ],
-    };
+    // Sync with initialValue changes
+    useEffect(() => {
+        if (initialValue !== value && !isUpdatingRef.current) {
+            setValue(initialValue);
+        }
+    }, [initialValue, value]);
 
-    const handleEditorChange = (editorState) => {
-        editorState.read(() => {
-            const root = $getRoot();
-            const textContent = root.getTextContent().trim();
-            const newHasContent = textContent.length > 0;
-            
-            if (newHasContent !== hasContent) {
-                onContentChange(id, newHasContent);
+    // Memoized content extraction
+    const extractContent = useCallback((newValue) => {
+        let textContent = '';
+        let newHasContent = false;
+        
+        if (type === 'table') {
+            if (Array.isArray(newValue)) {
+                newHasContent = newValue.some(row => 
+                    Array.isArray(row) && row.some(cell => 
+                        typeof cell === 'string' && cell.trim() !== ''
+                    )
+                );
             }
-        });
-    };
+        } else if (typeof newValue === 'string') {
+            if (type === 'details') {
+                // For rich text, check both HTML and plain text
+                textContent = newValue.replace(/<[^>]*>/g, '').trim();
+                newHasContent = textContent.length > 0 && 
+                               textContent !== '<p></p>' && 
+                               newValue.trim() !== '<p></p>' &&
+                               newValue.trim() !== '';
+            } else {
+                // For title, use direct value
+                textContent = newValue.trim();
+                newHasContent = textContent.length > 0;
+            }
+        }
+        
+        return { textContent, newHasContent };
+    }, [type]);
 
-    const handlePlusClick = () => {
+    // Optimized input change handler
+    const handleInputChange = useCallback((e) => {
+        const newValue = e.target ? e.target.value : e;
+        
+        // Prevent loops
+        isUpdatingRef.current = true;
+        setValue(newValue);
+        
+        // Clear existing timeout
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+        }
+        
+        // Debounced content change notification
+        debounceTimeoutRef.current = setTimeout(() => {
+            const { newHasContent } = extractContent(newValue);
+            onContentChange(id, newHasContent, newValue);
+            isUpdatingRef.current = false;
+        }, 150);
+    }, [id, onContentChange, extractContent]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Memoized event handlers
+    const handlePlusClick = useCallback(() => {
         setShowIconTray(true);
-    };
+    }, []);
 
-    const handleIconSelect = (selectedType) => {
+    const handleIconSelect = useCallback((selectedType) => {
         setShowIconTray(false);
-        onAddNew(selectedType);
-    };
+        
+        if (!hasContent && selectedType !== type) {
+            onReplace(id, selectedType);
+        } else {
+            onAddNew(selectedType);
+        }
+        
+        // Focus handling
+        setTimeout(() => {
+            if (editorRef.current) {
+                if (type === 'title' || selectedType === 'title') {
+                    const titleInput = editorRef.current.tagName === 'INPUT' ? 
+                        editorRef.current : 
+                        editorRef.current.querySelector('input');
+                    if (titleInput) {
+                        titleInput.focus();
+                        titleInput.setSelectionRange(titleInput.value.length, titleInput.value.length);
+                    }
+                } else if (selectedType !== 'table') {
+                    const tiptapEditor = editorRef.current.querySelector('.ProseMirror');
+                    if (tiptapEditor) {
+                        tiptapEditor.focus();
+                    }
+                }
+            }
+        }, 100);
+    }, [hasContent, type, onReplace, id, onAddNew]);
 
-    const handleCloseIconTray = () => {
+    const handleCloseIconTray = useCallback(() => {
         setShowIconTray(false);
-    };
+    }, []);
 
-    React.useEffect(() => {
+    // Click outside handler
+    useEffect(() => {
         const handleClickOutside = (event) => {
             if (showIconTray && !event.target.closest('.icon-tray-container')) {
                 setShowIconTray(false);
             }
         };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
+        if (showIconTray) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => document.removeEventListener('mousedown', handleClickOutside);
+        }
     }, [showIconTray]);
 
-    const getPlaceholder = () => {
-        switch (type) {
-            case 'title':
-                return 'Enter title...';
-            case 'table':
-                return null;
-            default:
-                return 'Enter the details...';
-        }
-    };
+    // Memoized styles and placeholders
+    const { placeholder, inputStyles } = useMemo(() => {
+        const getPlaceholder = () => {
+            switch (type) {
+                case 'title': return 'Enter title...';
+                case 'table': return null;
+                default: return 'Enter the details...';
+            }
+        };
 
-    const getStyles = () => {
-        switch (type) {
-            case 'title':
-                return {
-                    fontSize: '64px',
-                    fontWeight: 400,
-                    lineHeight: '80px',
-                    color: '#0E1328',
-                    textTransform: 'capitalize',
-                };
-            case 'table':
-                return null;
-            default:
-                return {
-                    fontSize: '24px',
-                    fontWeight: 400,
-                    lineHeight: '32px',
-                    color: '#0E1328',
-                };
-        }
-    };
+        const getStyles = () => {
+            switch (type) {
+                case 'title':
+                    return {
+                        fontSize: '64px',
+                        fontWeight: 400,
+                        lineHeight: '80px',
+                        color: '#0E1328',
+                        textTransform: 'capitalize',
+                        fontFamily: 'Lato',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        width: '100%',
+                        minHeight: '80px',
+                        resize: 'none',
+                    };
+                case 'table':
+                    return null;
+                default:
+                    return {
+                        fontSize: '24px',
+                        fontWeight: 400,
+                        lineHeight: '32px',
+                        color: '#0E1328',
+                        fontFamily: 'Lato',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        width: '100%',
+                        minHeight: '32px',
+                        resize: 'vertical',
+                    };
+            }
+        };
 
-    const getPlaceholderStyles = () => {
-        switch (type) {
-            case 'title':
-                return {
-                    fontSize: '64px',
-                    fontWeight: 400,
-                    lineHeight: '80px',
-                    color: '#9CA3AF',
-                    textTransform: 'capitalize',
-                };
-            case 'table':
-                return null;
-            default:
-                return {
-                    fontSize: '24px',
-                    fontWeight: 400,
-                    lineHeight: '32px',
-                    color: '#9CA3AF',
-                };
-        }
-    };
+        return {
+            placeholder: getPlaceholder(),
+            inputStyles: getStyles()
+        };
+    }, [type]);
 
-    const editorStyles = getStyles();
-    const placeholderStyles = getPlaceholderStyles();
-
-    // Handle table removal
-    const handleTableRemove = () => {
+    // Memoized table handlers
+    const handleTableRemove = useCallback(() => {
         if (onRemove) {
             onRemove(id);
         }
-    };
+    }, [onRemove, id]);
 
-    // Render ReusableTable component if type is 'table'
+    const handleTableDataChange = useCallback((data) => {
+        const properlyFormattedData = Array.isArray(data) ? data : [];
+        const { newHasContent } = extractContent(properlyFormattedData);
+        onContentChange(id, newHasContent, properlyFormattedData);
+    }, [id, onContentChange, extractContent]);
+
+    // Memoized unique ID generator
+    const generateUniqueId = useCallback((prefix) => {
+        return `${prefix}-page-${pageId}-field-${fieldIndex}-${id}-${type}`;
+    }, [pageId, fieldIndex, id, type]);
+
+    // Memoized container styles
+    const containerStyles = useMemo(() => ({
+        display: 'flex',
+        alignItems: type === 'title' ? 'center' : 'flex-start',
+        alignSelf: 'stretch',
+        marginBottom: type === 'title' ? '24px' : (type === 'table' ? '24px' : '16px'),
+        position: 'relative',
+        minHeight: type === 'title' ? '80px' : '40px',
+    }), [type]);
+
+    const plusIconStyles = useMemo(() => ({
+        display: 'flex',
+        width: '32px',
+        height: '32px',
+        padding: '4px',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '8px',
+        borderRadius: '28px',
+        background: 'rgba(14, 19, 40, 0.06)',
+        flexShrink: 0,
+        cursor: 'pointer',
+        position: 'absolute',
+        left: '-48px',
+        top: type === 'title' ? '50%' : '20px',
+        transform: type === 'title' ? 'translateY(-50%)' : 'none',
+        zIndex: 5,
+    }), [type]);
+
+    // Table component
     if (type === 'table') {
         return (
-            <div
-                className="icon-tray-container"
-                style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    alignSelf: 'stretch',
-                    marginBottom: '24px',
-                    position: 'relative',
-                }}
-            >
+            <div className="icon-tray-container" style={containerStyles}>
                 {showPlusIcon && (
-                    <div
-                        style={{
-                            display: 'flex',
-                            width: '32px',
-                            height: '32px',
-                            padding: '4px',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            gap: '8px',
-                            borderRadius: '28px',
-                            background: 'rgba(14, 19, 40, 0.06)',
-                            flexShrink: 0,
-                            cursor: 'pointer',
-                            position: 'absolute',
-                            left: '-48px',
-                            top: '20px',
-                        }}
-                        onClick={handlePlusClick}
-                    >
+                    <div style={plusIconStyles} onClick={handlePlusClick}>
                         <img src={add} alt='add icon' />
                     </div>
                 )}
@@ -467,152 +371,277 @@ function DetailEditor({ id, type = 'details', onAddNew, showPlusIcon, hasContent
                     />
                 )}
 
-                {/* Using the Reusable Table Component with table removal */}
                 <ReusableTable 
                     rows={4}
                     columns={2}
-                    headerPlaceholder="Type here"
+                    headerPlaceholder="Table Title"
                     cellPlaceholder="Type here"
-                    onDataChange={(data) => {
-                        // Check if table has any content
-                        const hasData = data.some(row => row.some(cell => cell.trim() !== ''));
-                        if (hasData !== hasContent) {
-                            onContentChange(id, hasData);
-                        }
-                    }}
-                    onTableRemove={handleTableRemove} // Pass table removal handler
+                    initialData={Array.isArray(initialValue) ? initialValue : undefined}
+                    onDataChange={handleTableDataChange}
+                    onTableRemove={handleTableRemove}
+                    idPrefix={generateUniqueId('table')}
                 />
             </div>
         );
     }
 
-    // Regular text editor for other types
+    // Text input components
     return (
-        <LexicalComposer initialConfig={detailConfig}>
-            <div
-                className="icon-tray-container"
-                style={{
+        <div className="icon-tray-container" style={containerStyles}>
+            {showPlusIcon && (
+                <div style={plusIconStyles} onClick={handlePlusClick}>
+                    <img src={add} alt='add icon' />
+                </div>
+            )}
+
+            {showIconTray && (
+                <IconTray
+                    onSelectType={handleIconSelect}
+                    onClose={handleCloseIconTray}
+                />
+            )}
+
+            <div 
+                ref={editorRef}
+                style={{ 
+                    flex: '1 0 0', 
+                    position: 'relative', 
+                    width: '100%',
                     display: 'flex',
-                    alignItems: 'flex-start',
-                    alignSelf: 'stretch',
-                    marginBottom: type === 'title' ? '24px' : '16px',
-                    position: 'relative',
+                    alignItems: type === 'title' ? 'center' : 'flex-start',
                 }}
             >
-                {showPlusIcon && (
-                    <div
-                        style={{
-                            display: 'flex',
-                            width: '32px',
-                            height: '32px',
-                            padding: '4px',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            gap: '8px',
-                            borderRadius: '28px',
-                            background: 'rgba(14, 19, 40, 0.06)',
-                            flexShrink: 0,
-                            cursor: 'pointer',
-                            position: 'absolute',
-                            left: '-48px',
-                            top: type === 'title' ? '20px' : '4px',
-                        }}
-                        onClick={handlePlusClick}
-                    >
-                        <img src={add} alt='add icon' />
+                {type === 'title' ? (
+                    <input
+                        ref={editorRef}
+                        type="text"
+                        id={generateUniqueId('policy-title-field')}
+                        name={generateUniqueId('policy-title')}
+                        value={value}
+                        onChange={handleInputChange}
+                        placeholder={placeholder}
+                        style={inputStyles}
+                        autoFocus={showPlusIcon}
+                    />
+                ) : (
+                    <div ref={editorRef} style={{ width: '100%' }}>
+                        <TipTapEditor
+                            editorId={generateUniqueId('policy-details-editor')}
+                            editorName={generateUniqueId('policy-details')}
+                            value={value}
+                            onChange={handleInputChange}
+                            placeholder={placeholder}
+                            minHeight="40px"
+                            maxHeight="300px"
+                            autoFocus={showPlusIcon}
+                        />
                     </div>
                 )}
-
-                {showIconTray && (
-                    <IconTray
-                        onSelectType={handleIconSelect}
-                        onClose={handleCloseIconTray}
-                    />
-                )}
-
-                <div style={{ flex: '1 0 0', position: 'relative', width: '100%' }}>
-                    <RichTextPlugin
-                        contentEditable={
-                            <ContentEditable 
-                                style={{
-                                    outline: 'none',
-                                    border: 'none',
-                                    background: 'transparent',
-                                    fontFamily: 'Lato',
-                                    fontStyle: 'normal',
-                                    cursor: 'text',
-                                    minHeight: type === 'title' ? '80px' : '32px',
-                                    width: '100%',
-                                    ...editorStyles,
-                                }}
-                            />
-                        }
-                        placeholder={
-                            placeholderStyles && (
-                                <div 
-                                    style={{
-                                        position: 'absolute',
-                                        top: '0',
-                                        left: '0',
-                                        fontFamily: 'Lato',
-                                        fontStyle: 'normal',
-                                        pointerEvents: 'none',
-                                        ...placeholderStyles,
-                                    }}
-                                >
-                                    {getPlaceholder()}
-                                </div>
-                            )
-                        }
-                        ErrorBoundary={LexicalErrorBoundary}
-                    />
-                    <OnChangePlugin onChange={handleEditorChange} />
-                    <PastePlugin />
-                </div>
             </div>
-            <HistoryPlugin />
-            <ListPlugin />
-            <LinkPlugin />
-        </LexicalComposer>
+        </div>
     );
-}
+});
 
-function PolicyPage() {
-    const [detailFields, setDetailFields] = useState([{ id: 1, type: 'details', hasContent: false }]);
+// Main PolicyPage Component - FIXED plus icon logic
+function PolicyPage({ pageId, pageNumber, pageData, isPreview, onDataUpdate }) {
+    const [detailFields, setDetailFields] = useState([{ 
+        id: 1, 
+        type: 'details',
+        hasContent: false,
+        content: ''
+    }]);
+    const [titleValue, setTitleValue] = useState('');
+    const [isInitialized, setIsInitialized] = useState(false);
+    
+    const updateTimeoutRef = useRef(null);
+    const isInternalUpdateRef = useRef(false);
+    const lastSentDataRef = useRef(null);
+    
+    const uniquePageId = useMemo(() => pageId || `page-${pageNumber || 1}`, [pageId, pageNumber]);
+    
+    const getPreviewData = useCallback(() => {
+        const fieldsWithContent = detailFields.filter(field => {
+            if (field.type === 'table') {
+                return true;
+            }
+            return field.hasContent && field.content && field.content.trim() !== '';
+        });
 
-    const titleConfig = {
-        namespace: "TitleEditor",
-        theme: exampleTheme,
-        onError,
-        editorState: null,
-        nodes: [
-            HeadingNode,
-            QuoteNode,
-            ListNode,
-            ListItemNode,
-            CodeNode,
-            CodeHighlightNode,
-            AutoLinkNode,
-            LinkNode,
-            HashtagNode,
-            TableNode,
-            TableCellNode,
-            TableRowNode,
-        ],
-    };
+        return {
+            title: titleValue,
+            fields: fieldsWithContent,
+            pageNumber: pageNumber,
+            createdAt: pageData?.content?.createdAt || new Date().toISOString(),
+            lastModified: new Date().toISOString()
+        };
+    }, [titleValue, detailFields, pageNumber, pageData?.content?.createdAt]);
 
-    const addNewField = (type = 'details') => {
-        const newId = Math.max(...detailFields.map(field => field.id)) + 1;
-        setDetailFields([...detailFields, { id: newId, type, hasContent: false }]);
-    };
+    const containerStyles = useMemo(() => ({
+        main: {
+            display: 'flex',
+            width: '1088px',
+            minHeight: '1540px',
+            padding: '64px 64px 0 64px',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            flexShrink: 0,
+            background: '#FFF',
+            position: 'relative',
+            overflow: 'visible',
+        },
+        content: {
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '20px',
+            flex: '1 0 0',
+            alignSelf: 'stretch',
+            flexDirection: 'column',
+            overflow: 'visible',
+        },
+        inner: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            flex: '1 0 0',
+            alignSelf: 'stretch',
+            overflow: 'visible',
+        },
+        titleContainer: {
+            display: 'flex',
+            padding: '8px 64px',
+            alignItems: 'center',
+            alignSelf: 'stretch',
+            borderRadius: '16px',
+            background: 'rgba(255, 255, 255, 0.04)',
+            position: 'relative',
+            marginBottom: '24px',
+        },
+        titleInput: {
+            outline: 'none',
+            border: 'none',
+            background: 'transparent',
+            color: titleValue ? '#0E1328' : '#9CA3AF',
+            fontFamily: 'Lato',
+            fontSize: '64px',
+            fontStyle: 'normal',
+            fontWeight: 400,
+            lineHeight: '80px',
+            textTransform: 'capitalize',
+            minHeight: '80px',
+            width: '100%',
+        },
+        fieldsContainer: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignSelf: 'stretch',
+            paddingLeft: '64px',
+            paddingRight: '16px',
+            paddingBottom: '120px',
+            overflow: 'visible',
+        },
+        loading: {
+            display: 'flex',
+            width: '1088px',
+            minHeight: '1540px',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: '#FFF',
+            borderRadius: '32px',
+            fontFamily: 'Lato',
+            fontSize: '18px',
+            color: '#666'
+        }
+    }), [titleValue]);
 
-    const handleContentChange = (fieldId, hasContent) => {
+    // FIXED: Stable plus icon logic - moved outside of render to prevent blinking
+    const fieldsWithPlusIcon = useMemo(() => {
+        return detailFields.map((field, index) => {
+            let showPlusIcon = false;
+
+            // Show plus icon for empty fields
+            if (!field.hasContent) {
+                if (field.type === 'details') {
+                    // For details fields, show plus icon only on the first empty one
+                    const hasEmptyDetailsBefore = detailFields.slice(0, index).some(f => 
+                        f.type === 'details' && !f.hasContent
+                    );
+                    showPlusIcon = !hasEmptyDetailsBefore;
+                } else {
+                    // For other field types (title, table), always show if empty
+                    showPlusIcon = true;
+                }
+            }
+
+            // Always show on first field if empty
+            if (index === 0 && !field.hasContent) {
+                showPlusIcon = true;
+            }
+
+            return {
+                ...field,
+                showPlusIcon
+            };
+        });
+    }, [detailFields]);
+
+    const addNewField = useCallback((type = 'details') => {
         setDetailFields(prevFields => {
-            const updatedFields = prevFields.map(field => 
-                field.id === fieldId 
-                    ? { ...field, hasContent }
-                    : field
-            );
+            const newId = Math.max(...prevFields.map(field => field.id)) + 1;
+            
+            if (type === 'title' || type === 'table') {
+                const detailsId = newId + 1;
+                return [
+                    ...prevFields, 
+                    { id: newId, type, hasContent: false, content: '' },
+                    { id: detailsId, type: 'details', hasContent: false, content: '' }
+                ];
+            } else {
+                return [...prevFields, { id: newId, type, hasContent: false, content: '' }];
+            }
+        });
+    }, []);
+
+    const handleReplaceField = useCallback((fieldId, newType) => {
+        setDetailFields(prevFields => {
+            const fieldIndex = prevFields.findIndex(field => field.id === fieldId);
+            const updatedFields = [...prevFields];
+            
+            updatedFields[fieldIndex] = {
+                ...updatedFields[fieldIndex],
+                type: newType,
+                content: '',
+                hasContent: false
+            };
+            
+            if (newType === 'title' || newType === 'table') {
+                const nextIndex = fieldIndex + 1;
+                const newDetailsId = Math.max(...updatedFields.map(field => field.id)) + 1;
+                
+                if (nextIndex >= updatedFields.length || 
+                    updatedFields[nextIndex].type !== 'details' || 
+                    updatedFields[nextIndex].hasContent) {
+                    updatedFields.splice(nextIndex, 0, {
+                        id: newDetailsId,
+                        type: 'details',
+                        hasContent: false,
+                        content: ''
+                    });
+                }
+            }
+            
+            return updatedFields;
+        });
+    }, []);
+
+    const handleContentChange = useCallback((fieldId, hasContent, content = '') => {
+        setDetailFields(prevFields => {
+            const updatedFields = prevFields.map(field => {
+                if (field.id === fieldId) {
+                    return { ...field, hasContent, content };
+                }
+                return field;
+            });
             
             if (hasContent) {
                 const fieldIndex = updatedFields.findIndex(f => f.id === fieldId);
@@ -620,175 +649,158 @@ function PolicyPage() {
                 
                 if (isLastField) {
                     const newId = Math.max(...updatedFields.map(field => field.id)) + 1;
-                    updatedFields.push({ id: newId, type: 'details', hasContent: false });
+                    updatedFields.push({ 
+                        id: newId, 
+                        type: 'details', 
+                        hasContent: false,
+                        content: ''
+                    });
                 }
             }
             
             return updatedFields;
         });
-    };
+    }, []);
 
-    // Handle field removal (for tables and other fields)
-    const handleFieldRemove = (fieldId) => {
+    const handleFieldRemove = useCallback((fieldId) => {
         setDetailFields(prevFields => {
             const updatedFields = prevFields.filter(field => field.id !== fieldId);
             
-            // Ensure there's always at least one field
             if (updatedFields.length === 0) {
-                return [{ id: 1, type: 'details', hasContent: false }];
+                return [{ id: 1, type: 'details', hasContent: false, content: '' }];
             }
             
-            // If we removed the last field and there's no empty field, add one
             const hasEmptyField = updatedFields.some(field => !field.hasContent);
             if (!hasEmptyField) {
                 const newId = Math.max(...updatedFields.map(field => field.id)) + 1;
-                updatedFields.push({ id: newId, type: 'details', hasContent: false });
+                updatedFields.push({ 
+                    id: newId, 
+                    type: 'details', 
+                    hasContent: false,
+                    content: ''
+                });
             }
             
             return updatedFields;
         });
-    };
+    }, []);
+
+    const handleTitleChange = useCallback((e) => {
+        setTitleValue(e.target.value);
+    }, []);
+
+    // Initialization effect
+    useEffect(() => {
+        if (pageData && pageData.content) {
+            const newTitle = pageData.content.title || '';
+            const newFields = pageData.content.fields && pageData.content.fields.length > 0 
+                ? pageData.content.fields 
+                : [{ id: 1, type: 'details', hasContent: false, content: '' }];
+            
+            setTitleValue(newTitle);
+            setDetailFields(newFields);
+        } else {
+            setTitleValue('');
+            setDetailFields([{ 
+                id: 1, 
+                type: 'details', 
+                hasContent: false,
+                content: ''
+            }]);
+        }
+        setIsInitialized(true);
+    }, [pageData]);
+
+    // Data update effect
+    useEffect(() => {
+        if (onDataUpdate && !isPreview && isInitialized && !isInternalUpdateRef.current) {
+            if (updateTimeoutRef.current) {
+                clearTimeout(updateTimeoutRef.current);
+            }
+            
+            updateTimeoutRef.current = setTimeout(() => {
+                const previewData = getPreviewData();
+                const hasContent = titleValue.trim() || detailFields.some(field => field.hasContent);
+                
+                const dataString = JSON.stringify(previewData);
+                if (hasContent && dataString !== lastSentDataRef.current) {
+                    isInternalUpdateRef.current = true;
+                    lastSentDataRef.current = dataString;
+                    
+                    onDataUpdate({
+                        ...pageData,
+                        content: previewData,
+                        lastModified: new Date().toISOString()
+                    });
+                    
+                    setTimeout(() => {
+                        isInternalUpdateRef.current = false;
+                    }, 100);
+                }
+            }, 300);
+        }
+    }, [titleValue, detailFields, isInitialized, onDataUpdate, isPreview, getPreviewData, pageData]);
+
+    // Cleanup effect
+    useEffect(() => {
+        return () => {
+            if (updateTimeoutRef.current) {
+                clearTimeout(updateTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    if (!isInitialized) {
+        return <div style={containerStyles.loading}>Loading...</div>;
+    }
+
+    if (isPreview) {
+        const previewData = getPreviewData();
+        return <PolicyPagePreview data={previewData} pageNumber={pageNumber} />;
+    }
 
     return (
-        <div
-            style={{
-                display: 'flex',
-                width: '1088px',
-                height: '1540px',
-                padding: '64px 64px 0 64px',
-                flexDirection: 'column',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                flexShrink: 0,
-                background: '#FFF',
-                position: 'relative',
-                overflow: 'visible',
-                borderRadius: '32px',
-            }}
-        >
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '20px',
-                    flex: '1 0 0',
-                    alignSelf: 'stretch',
-                    flexDirection: 'column',
-                    overflow: 'visible',
-                }}
-            >
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        flex: '1 0 0',
-                        alignSelf: 'stretch',
-                        overflow: 'visible',
-                    }}
-                >
-                    {/* Editable Title Section */}
-                    <LexicalComposer initialConfig={titleConfig}>
-                        <div
-                            style={{
-                                display: 'flex',
-                                padding: '8px 64px',
-                                alignItems: 'center',
-                                alignSelf: 'stretch',
-                                borderRadius: '16px',
-                                background: 'rgba(255, 255, 255, 0.04)',
-                                position: 'relative',
-                                marginBottom: '24px',
-                            }}
-                        >
-                            <div style={{ flex: '1 0 0', position: 'relative' }}>
-                                <RichTextPlugin
-                                    contentEditable={
-                                        <ContentEditable 
-                                            style={{
-                                                outline: 'none',
-                                                border: 'none',
-                                                background: 'transparent',
-                                                color: '#0E1328',
-                                                fontFamily: 'Lato',
-                                                fontSize: '64px',
-                                                fontStyle: 'normal',
-                                                fontWeight: 400,
-                                                lineHeight: '80px',
-                                                textTransform: 'capitalize',
-                                                minHeight: '80px',
-                                                cursor: 'text',
-                                            }}
-                                        />
-                                    }
-                                    placeholder={
-                                        <div 
-                                            style={{
-                                                position: 'absolute',
-                                                top: '0',
-                                                left: '0',
-                                                color: '#9CA3AF',
-                                                fontFamily: 'Lato',
-                                                fontSize: '64px',
-                                                fontStyle: 'normal',
-                                                fontWeight: 400,
-                                                lineHeight: '80px',
-                                                textTransform: 'capitalize',
-                                                pointerEvents: 'none',
-                                            }}
-                                        >
-                                            Terms & Conditions
-                                        </div>
-                                    }
-                                    ErrorBoundary={LexicalErrorBoundary}
-                                />
-                                <PastePlugin />
-                            </div>
-                        </div>
-                        <HistoryPlugin />
-                        <AutoFocusPlugin />
-                        <ListPlugin />
-                        <LinkPlugin />
-                    </LexicalComposer>
+        <div style={containerStyles.main}>
+            <div style={containerStyles.content}>
+                <div style={containerStyles.inner}>
+                    {/* Title Section */}
+                    <div style={containerStyles.titleContainer}>
+                        <input
+                            type="text"
+                            id={`policy-page-main-title-${uniquePageId}`}
+                            name={`policy-page-title-${uniquePageId}`}
+                            value={titleValue}
+                            onChange={handleTitleChange}
+                            placeholder="Terms & Conditions"
+                            style={containerStyles.titleInput}
+                        />
+                    </div>
 
                     {/* Dynamic Fields */}
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignSelf: 'stretch',
-                            paddingLeft: '64px',
-                            paddingRight: '16px',
-                            paddingBottom: '120px',
-                            overflow: 'visible',
-                            flex: '1 0 0',
-                        }}
-                    >
-                        {detailFields.map((field, index) => {
-                            const firstEmptyFieldIndex = detailFields.findIndex(f => !f.hasContent);
-                            const showPlusIcon = index === firstEmptyFieldIndex && !field.hasContent;
-                            
-                            return (
-                                <DetailEditor
-                                    key={field.id}
-                                    id={field.id}
-                                    type={field.type}
-                                    onAddNew={addNewField}
-                                    showPlusIcon={showPlusIcon}
-                                    hasContent={field.hasContent}
-                                    onContentChange={handleContentChange}
-                                    onRemove={handleFieldRemove} // Pass the removal handler
-                                />
-                            );
-                        })}
+                    <div style={containerStyles.fieldsContainer}>
+                        {fieldsWithPlusIcon.map((field, index) => (
+                            <DetailEditor
+                                key={field.id}
+                                id={field.id}
+                                type={field.type}
+                                onAddNew={addNewField}
+                                onReplace={handleReplaceField}
+                                showPlusIcon={field.showPlusIcon}
+                                hasContent={field.hasContent}
+                                onContentChange={handleContentChange}
+                                onRemove={handleFieldRemove}
+                                initialValue={field.content}
+                                pageId={uniquePageId}
+                                fieldIndex={index}
+                            />
+                        ))}
                     </div>
                 </div>
             </div>
 
-            {/* Footer */}
-           <Footer pageNumber={pageNumber}/>
+            <Footer pageNumber={pageNumber}/>
         </div>
-    )
+    );
 }
 
-export default PolicyPage
+export default PolicyPage;

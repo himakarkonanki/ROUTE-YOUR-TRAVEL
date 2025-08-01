@@ -501,7 +501,6 @@ const frontPageWrapper = {
   justifyContent: 'center',
   alignItems: 'center',
   aspectRatio: '272/385',
-  borderRadius: '32px',
   flexShrink: 0,
   position: 'relative',
 };

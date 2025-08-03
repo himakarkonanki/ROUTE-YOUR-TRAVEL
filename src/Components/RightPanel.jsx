@@ -505,15 +505,17 @@ const frontPageWrapper = {
   position: 'relative',
 };
 
+// FIXED: Changed minHeight to height and added overflow hidden for fixed size
 const dayPageWrapper = {
   display: 'flex',
   width: '1088px',
-  minHeight: '1540px',
+  height: '1540px', // Changed from minHeight to height for fixed size
   flexDirection: 'column',
   justifyContent: 'flex-start',
   alignItems: 'center',
   flexShrink: 0,
   position: 'relative',
+  overflow: 'hidden', // Prevent content from extending beyond fixed dimensions
 };
 
 export default RightPanel;

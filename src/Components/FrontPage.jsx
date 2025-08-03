@@ -116,11 +116,11 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             gap: '16px',
             alignSelf: 'stretch',
             borderRadius: '16px',
-            height: '64px'
+            height: '64px',
         },
         labelContainer: {
             display: 'flex',
-            width: '280px',
+            width: '210px',
             height: '32px',
             alignItems: 'center',
             justifyContent: 'space-between'
@@ -128,7 +128,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
         labelContainerTall: {
             display: "flex",
             alignItems: "center",
-            width: "280px",
+            width: "210px",
             height: "64px",
             justifyContent: 'space-between'
         },
@@ -161,14 +161,15 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             background: isPreview ? "transparent" : "rgba(242, 244, 254, 0.12)",
         },
         counterText: {
-            color: "#FFF",
+           color: localData.adults === 0 ? "#F2F4FE1F" : "#FFFFFF",
             fontSize: "28px",
             width: isPreview ? "auto" : "64px",
             textAlign: isPreview ? "left" : "center",
             fontFamily: 'Lato',
             fontWeight: 400,
-            lineHeight: '36px'
+            lineHeight: '36px',
         }
+
     }), [localData.backgroundImage, isPreview]);
 
     // Update local state when pageData changes (for real-time preview updates)

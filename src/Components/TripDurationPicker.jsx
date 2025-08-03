@@ -223,7 +223,7 @@ function TripDurationPicker({ value, onChange, isPreview = false }) {
           textOverflow: 'ellipsis',
           color: hasSelectedDates ? '#FFFFFF' : 'rgba(255, 255, 255, 0.64)',
           fontFamily: 'Lato',
-          fontSize: hasSelectedDates ? '28px' : '20px',
+          fontSize: hasSelectedDates ? '28px' : '24px',
           fontStyle: 'normal',
           fontWeight: 400,
           lineHeight: '36px',
@@ -241,8 +241,8 @@ function TripDurationPicker({ value, onChange, isPreview = false }) {
   const styles = {
     container: {
       position: 'absolute',
-      top: '0px',
-      right: '-300px', // REDUCED: From -250px to -200px
+      top: '70px',
+      right: '-250px', // REDUCED: From -250px to -200px
       zIndex: 9999,
       display: 'flex',
       padding: '16px 12px', // REDUCED: From 24px 16px to 16px 12px
@@ -393,11 +393,11 @@ function TripDurationPicker({ value, onChange, isPreview = false }) {
           overflow: 'hidden',
           whiteSpace: 'nowrap',
           textOverflow: 'ellipsis',
-          width: hasSelectedDates ? 'auto' : '160px',
+          width: hasSelectedDates ? 'auto' : '120px',
           transition: 'width 0.3s ease-in-out',
-          color: hasSelectedDates ? '#FFFFFF' : 'rgba(255, 255, 255, 0.64)',
+          color: hasSelectedDates ? '#FFFFFF' : '#F2F4FE1F',
           fontFamily: 'Lato',
-          fontSize: hasSelectedDates ? '28px' : '20px',
+          fontSize: hasSelectedDates ? '28px' : '22px',
           fontStyle: 'normal',
           fontWeight: 400,
           lineHeight: '36px',

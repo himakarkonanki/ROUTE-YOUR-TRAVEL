@@ -59,42 +59,43 @@ function AddSectionTray({ onAddSection }) {
             alignSelf: 'stretch',
             position: 'relative',
         }}>
-            {/* Add Section Button */}
-            <div 
-                onClick={() => setShowAddSectionTray(!showAddSectionTray)}
-                style={{
-                    display: 'flex',
-                    padding: '16px',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: '8px',
-                    borderRadius: '28px',
-                    background: '#F2F4FE',
-                    cursor: 'pointer',
-                }}
-            >
-                <div style={{
-                    width: '24px',
-                    height: '24px',
-                    aspectRatio: '1 / 1',
-                }}>
-                    <img src={add} alt='add icon' />
+            {/* Conditionally render Add Section Button OR Tray */}
+            {!showAddSectionTray ? (
+                /* Add Section Button - only show when tray is closed */
+                <div 
+                    onClick={() => setShowAddSectionTray(true)}
+                    style={{
+                        display: 'flex',
+                        padding: '16px',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '8px',
+                        borderRadius: '28px',
+                        background: '#F2F4FE',
+                        cursor: 'pointer',
+                    }}
+                >
+                    <div style={{
+                        width: '24px',
+                        height: '24px',
+                        aspectRatio: '1 / 1',
+                    }}>
+                        <img src={add} alt='add icon' />
+                    </div>
+                    <div style={{
+                        color: '#0E1328',
+                        fontFamily: 'Lato',
+                        fontSize: '16px',
+                        fontStyle: 'normal',
+                        fontWeight: 600,
+                        lineHeight: '24px',
+                        textTransform: 'uppercase',
+                    }}>
+                        Add Section
+                    </div>
                 </div>
-                <div style={{
-                    color: '#0E1328',
-                    fontFamily: 'Lato',
-                    fontSize: '16px',
-                    fontStyle: 'normal',
-                    fontWeight: 600,
-                    lineHeight: '24px',
-                    textTransform: 'uppercase',
-                }}>
-                    Add Section
-                </div>
-            </div>
-
-            {/* Horizontal Tray */}
-            {showAddSectionTray && (
+            ) : (
+                /* Horizontal Tray - only show when Add Section is clicked */
                 <div
                     ref={trayRef}
                     style={{

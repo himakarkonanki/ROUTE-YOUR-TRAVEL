@@ -4,7 +4,8 @@ import RightPanel from './RightPanel'
 import LeftPanel from './LeftPanel'
 
 function LandingPage() {
-  // Remove day page from initial state - only cover and thank you pages by default
+  // const [page, setPage] = useState(initialPages);
+
   const [pages, setPages] = useState([
     { 
       id: 1, 
@@ -110,6 +111,11 @@ function LandingPage() {
     );
   };
 
+  // Fixed: Use setPages instead of setPage
+  const handleReorderPages = (reorderedPages) => {
+    setPages(reorderedPages);
+  };
+
   return (
     <div style={{
       display: "flex",
@@ -123,6 +129,7 @@ function LandingPage() {
         onAddPage={addPage}
         onDuplicatePage={duplicatePage}
         onDeletePage={deletePage}
+        onReorderPages={handleReorderPages}
       />
       <div style={{ marginLeft: '320px', flex: 1 }}>
         <RightPanel 

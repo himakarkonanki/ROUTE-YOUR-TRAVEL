@@ -139,7 +139,6 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             fontStyle: "normal",
             fontWeight: 400,
             lineHeight: "32px"
-
         },
         colon: {
             color: "rgba(255, 255, 255, 0.70)",
@@ -160,8 +159,17 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             borderRadius: "16px",
             background: isPreview ? "transparent" : "rgba(242, 244, 254, 0.12)",
         },
-        counterText: {
-           color: localData.adults === 0 ? "#F2F4FE1F" : "#FFFFFF",
+        adultsCounterText: {
+            color: localData.adults === 0 ? "rgba(242, 244, 254, 0.12)" : "#FFFFFF",
+            fontSize: "28px",
+            width: isPreview ? "auto" : "64px",
+            textAlign: isPreview ? "left" : "center",
+            fontFamily: 'Lato',
+            fontWeight: 400,
+            lineHeight: '36px',
+        },
+        childrenCounterText: {
+            color: localData.children === 0 ? "rgba(242, 244, 254, 0.12)" : "#FFFFFF",
             fontSize: "28px",
             width: isPreview ? "auto" : "64px",
             textAlign: isPreview ? "left" : "center",
@@ -169,8 +177,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             fontWeight: 400,
             lineHeight: '36px',
         }
-
-    }), [localData.backgroundImage, isPreview]);
+    }), [localData.backgroundImage, localData.adults, localData.children, isPreview]);
 
     // Update local state when pageData changes (for real-time preview updates)
     useEffect(() => {
@@ -183,8 +190,6 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
         });
     }, [pageData]);
 
-
-
     useEffect(() => {
         fetch(company)
             .then((res) => res.blob())
@@ -196,7 +201,6 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                 reader.readAsDataURL(blob);
             });
     }, []);
-
 
     // Memoize callback to prevent unnecessary re-renders
     const handleDataChange = useCallback((field, value) => {
@@ -254,7 +258,6 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     {base64Image && (
                         <img src={base64Image} alt="Company Logo" style={styles.logo} />
                     )}
-
                 </div>
             </div>
 
@@ -414,7 +417,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                                 <img src={dnd} alt="minus" width={32} height={32} />
                             </div>
                         )}
-                        <div style={styles.counterText}>
+                        <div style={styles.adultsCounterText}>
                             {localData.adults}
                         </div>
                         {!isPreview && (
@@ -456,7 +459,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                                 <img src={dnd} alt="minus" width={32} height={32} />
                             </div>
                         )}
-                        <div style={styles.counterText}>
+                        <div style={styles.childrenCounterText}>
                             {localData.children}
                         </div>
                         {!isPreview && (

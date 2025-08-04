@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import close from '../assets/icons/close.svg'
 import dnd from '../assets/icons/do_not_disturb_on.svg'
+import download from '../assets/icons/download.svg'
 import add from '../assets/icons/add_circle.svg'
 import FrontPage from './FrontPage'
 import DayPage from './DayPage'
@@ -92,9 +93,9 @@ function PreviewPane({ onClose, pages }) {
             });
         } catch (error) {
             console.error('Error generating PDF:', error);
-            
+
             let errorMessage = 'Error generating PDF. Please try again.';
-            
+
             if (error.name === 'AbortError') {
                 errorMessage = 'PDF generation timed out. Please try again with fewer pages or simpler content.';
             } else if (error.message.includes('Failed to fetch')) {
@@ -102,7 +103,7 @@ function PreviewPane({ onClose, pages }) {
             } else if (error.message) {
                 errorMessage = `Error: ${error.message}`;
             }
-            
+
             alert(errorMessage);
         } finally {
             setIsGeneratingPDF(false);
@@ -112,159 +113,191 @@ function PreviewPane({ onClose, pages }) {
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 1000, background: 'transparent', animation: 'slideUpFromBottom 0.3s ease-out forwards' }}>
             <div style={{ display: 'flex', width: '100%', height: '100%', paddingTop: '64px', justifyContent: 'center', alignItems: 'center', background: 'transparent' }}>
-                <div style={{ display: 'flex', padding: '0 24px', flexDirection: 'column', alignItems: 'flex-start', gap: '24px', flex: '1 0 0', alignSelf: 'stretch', background: '#FFF' ,borderRadius:'32px 32px 0 0' }}>
-                    {/* Header section */}
-                    <div style={{ display: 'inline-flex', alignItems: 'center', padding: '24px 12px 0 12px', width: '100%', position: 'relative' }}>
-                        <div style={{ color: '#11121F', fontFamily: 'Lato', fontSize: '24px', fontStyle: 'normal', fontWeight: 600, lineHeight: '36px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: '1 1 0' }}>
-                            Itinerary Preview
+                <div style={{ display: 'flex', padding: '0 24px', flexDirection: 'column', alignItems: 'flex-start', gap: '24px', flex: '1 0 0', alignSelf: 'stretch', background: '#FFF', borderRadius: '32px 32px 0 0' }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '100%',
+                        padding: '24px 12px 0 12px',
+                        minHeight: '56px',
+                        boxSizing: 'border-box',
+                        position: 'relative'
+                    }}>
+                        {/* Left: Heading */}
+                        <div style={{
+                            flex: '1 0 0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            minWidth: 0
+                        }}>
+                            <div style={{
+                                color: '#11121F',
+                                fontFamily: 'Lato',
+                                fontSize: '20px',
+                                fontWeight: 600,
+                                lineHeight: '24px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}>
+                                Itinerary Preview
+                            </div>
                         </div>
 
-                        {/* Enhanced Controls with Zoom Functionality */}
-                        <div style={{ display: 'flex', height: '40px', padding: '8px 12px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '16px', background: 'rgba(14, 19, 40, 0.04)', position: 'absolute', left: '50%', top: '50%', transform: 'translateX(-50%) translateY(-50%)' }}>
-                            {/* Zoom Out Button */}
-                            <div 
-                                style={{ 
-                                    width: '24px', 
-                                    height: '24px', 
-                                    aspectRatio: '1 / 1',
-                                    cursor: zoomLevel > zoomLevels[0] ? 'pointer' : 'not-allowed',
-                                    opacity: zoomLevel > zoomLevels[0] ? 1 : 0.5,
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    borderRadius: '4px',
-                                    transition: 'all 0.2s ease'
-                                }}
-                                onClick={zoomLevel > zoomLevels[0] ? zoomOut : undefined}
-                                onMouseEnter={(e) => {
-                                    if (zoomLevel > zoomLevels[0]) {
-                                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.1)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                title="Zoom Out"
-                            >
-                                <img src={dnd} alt='zoom-out' />
-                            </div>
-
-                            <div style={{ width: '1px', height: '24px', borderRadius: '2px', background: 'rgba(0, 0, 0, 0.16)' }} />
-
-                            {/* Zoom Level Display with Reset on Click */}
-                            <div 
-                                style={{ 
-                                    display: 'flex', 
-                                    padding: '0 4px', 
-                                    justifyContent: 'center', 
-                                    alignItems: 'center',
+                        {/* Center: Zoom + Download */}
+                        <div style={{
+                            flex: '0 0 auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            height: '40px'
+                        }}>
+                            {/* Zoom Controls */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                background: 'rgba(14, 19, 40, 0.04)',
+                                borderRadius: '16px',
+                                height: '40px',
+                                padding: '0 12px'
+                            }}>
+                                {/* Zoom Out */}
+                                <div
+                                    style={{
+                                        width: '24px',
+                                        height: '24px',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        cursor: zoomLevel > zoomLevels[0] ? 'pointer' : 'not-allowed',
+                                        opacity: zoomLevel > zoomLevels[0] ? 1 : 0.5,
+                                        borderRadius: '4px',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onClick={zoomLevel > zoomLevels[0] ? zoomOut : undefined}
+                                    title="Zoom Out"
+                                >
+                                    <img src={dnd} alt="zoom-out" />
+                                </div>
+                                {/* Zoom Value */}
+                                <div style={{
+                                    minWidth: '52px',
+                                    textAlign: 'center',
+                                    fontFamily: 'Lato',
+                                    fontSize: '18px',
+                                    fontWeight: 500,
+                                    color: '#11121F',
                                     cursor: 'pointer',
-                                    borderRadius: '4px',
-                                    transition: 'background 0.2s ease'
-                                }}
-                                onClick={resetZoom}
-                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.05)'}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                title="Reset Zoom (Click to fit)"
-                            >
-                                <div style={{ width: '64px', color: '#000', textAlign: 'center', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '150%' }}>
+                                    lineHeight: '40px',
+                                    height: '40px',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }} onClick={resetZoom} title="Reset Zoom (Click to fit)">
                                     {zoomLevel}%
+                                </div>
+                                {/* Zoom In */}
+                                <div
+                                    style={{
+                                        width: '24px',
+                                        height: '24px',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        cursor: zoomLevel < zoomLevels[zoomLevels.length - 1] ? 'pointer' : 'not-allowed',
+                                        opacity: zoomLevel < zoomLevels[zoomLevels.length - 1] ? 1 : 0.5,
+                                        borderRadius: '4px',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onClick={zoomLevel < zoomLevels[zoomLevels.length - 1] ? zoomIn : undefined}
+                                    title="Zoom In"
+                                >
+                                    <img src={add} alt="zoom-in" />
                                 </div>
                             </div>
 
-                            <div style={{ width: '1px', height: '24px', borderRadius: '2px', background: 'rgba(0, 0, 0, 0.16)' }} />
-
-                            {/* Zoom In Button */}
-                            <div 
-                                style={{ 
-                                    width: '24px', 
-                                    height: '24px', 
-                                    aspectRatio: '1 / 1',
-                                    cursor: zoomLevel < zoomLevels[zoomLevels.length - 1] ? 'pointer' : 'not-allowed',
-                                    opacity: zoomLevel < zoomLevels[zoomLevels.length - 1] ? 1 : 0.5,
+                            {/* Download PDF Button */}
+                            <div
+                                style={{
+                                    borderRadius: '24px',
+                                    background: 'linear-gradient(0deg, rgba(0, 0, 0, 0.30), rgba(0, 0, 0, 0.30)), #3874FF',
                                     display: 'flex',
+                                    height: '40px',
+                                    padding: '0 16px',
                                     justifyContent: 'center',
                                     alignItems: 'center',
-                                    borderRadius: '4px',
-                                    transition: 'all 0.2s ease'
-                                }}
-                                onClick={zoomLevel < zoomLevels[zoomLevels.length - 1] ? zoomIn : undefined}
-                                onMouseEnter={(e) => {
-                                    if (zoomLevel < zoomLevels[zoomLevels.length - 1]) {
-                                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.1)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                title="Zoom In"
-                            >
-                                <img src={add} alt='zoom-in' />
-                            </div>
-
-                            <div style={{ width: '1px', height: '24px', borderRadius: '2px', background: 'rgba(0, 0, 0, 0.16)' }} />
-
-                            {/* Download PDF Button */}
-                            <div 
-                                style={{ 
-                                    width: '24px', 
-                                    height: '24px', 
-                                    aspectRatio: '1 / 1', 
+                                    gap: '8px',
                                     cursor: isGeneratingPDF ? 'not-allowed' : 'pointer',
                                     opacity: isGeneratingPDF ? 0.5 : 1,
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    borderRadius: '4px',
-                                    transition: 'background 0.2s ease'
                                 }}
-                                onClick={!isGeneratingPDF ? downloadAsPDF : undefined}
-                                onMouseEnter={(e) => {
-                                    if (!isGeneratingPDF) {
-                                        e.currentTarget.style.background = 'rgba(0, 0, 0, 0.1)';
-                                    }
-                                }}
-                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                title={isGeneratingPDF ? "Generating PDF..." : "Download as PDF"}
+                                onClick={isGeneratingPDF ? undefined : downloadAsPDF}
+                                title="Download as PDF"
                             >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 16L7 11L8.4 9.55L11 12.15V4H13V12.15L15.6 9.55L17 11L12 16ZM6 20C5.45 20 4.979 19.804 4.587 19.412C4.195 19.02 3.99934 18.5493 4 18V15H6V18H18V15H20V18C20 18.55 19.804 19.021 19.412 19.413C19.02 19.805 18.5493 20.0007 18 20H6Z" fill="currentColor"/>
-                                </svg>
+                                <img src={download} alt="download-icon" style={{ width: '24px', height: '24px' }} />
+                                <span style={{
+                                    color: '#FFF',
+                                    fontFamily: 'Lato',
+                                    fontSize: '14px',
+                                    fontWeight: 500,
+                                    textTransform: 'uppercase',
+                                }}>
+                                    {isGeneratingPDF ? 'Generating...' : 'Download as PDF'}
+                                </span>
                             </div>
                         </div>
 
-                        {/* Close Button */}
-                        <div style={{ display: 'flex', width: '48px', height: '48px', paddingTop: '2px', justifyContent: 'center', alignItems: 'center', aspectRatio: '1 / 1', borderRadius: '28px', background: 'rgba(0, 0, 0, 0.08)', cursor: 'pointer', marginLeft: 'auto' }} onClick={onClose}>
-                            <div style={{ width: '24px', height: '24px', flexShrink: 0, aspectRatio: '1 / 1' }}>
-                                <img src={close} alt='close icon' />
+                        {/* Right: Close Button */}
+                        <div style={{
+                            flex: '1 0 0',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
+                            minWidth: 0
+                        }}>
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                borderRadius: '28px',
+                                background: 'rgba(0, 0, 0, 0.08)',
+                                cursor: 'pointer'
+                            }} onClick={onClose}>
+                                <img src={close} alt="close icon" style={{ width: '24px', height: '24px' }} />
                             </div>
                         </div>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '24px', flex: '1 0 0', alignSelf: 'stretch' }}>
                         {/* Scrollable container with zoom applied */}
-                        <div 
+                        <div
                             ref={scrollContainerRef}
-                            style={{ 
-                                display: 'flex', 
-                                padding: '32px', 
-                                flexDirection: 'column', 
-                                alignItems: 'center', 
-                                gap: '24px', 
-                                flex: '1 0 0', 
-                                alignSelf: 'stretch', 
-                                borderRadius: '24px 24px 0 0', 
-                                background: '#EEF0F3', 
-                                overflowY: 'auto', 
+                            style={{
+                                display: 'flex',
+                                padding: '32px',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '24px',
+                                flex: '1 0 0',
+                                alignSelf: 'stretch',
+                                borderRadius: '24px 24px 0 0',
+                                background: '#EEF0F3',
+                                overflowY: 'auto',
                                 overflowX: 'auto',
-                                maxHeight: 'calc(100vh - 150px)' 
+                                maxHeight: 'calc(100vh - 150px)'
                             }}
                         >
                             {/* Pages container with zoom transformation */}
-                            <div 
+                            <div
                                 ref={pagesContainerRef}
-                                style={{ 
-                                    display: 'flex', 
-                                    width: '1088px', 
+                                style={{
+                                    display: 'flex',
+                                    width: '1088px',
                                     maxWidth: 'none',
-                                    flexDirection: 'column', 
-                                    alignItems: 'flex-start', 
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
                                     gap: '24px',
                                     transform: `scale(${zoomLevel / 100})`,
                                     transformOrigin: 'center top',
@@ -273,22 +306,22 @@ function PreviewPane({ onClose, pages }) {
                             >
                                 {/* Render all pages dynamically */}
                                 {pages && pages.map((page, index) => (
-                                    <div 
-                                        key={page.id} 
+                                    <div
+                                        key={page.id}
                                         className="pdf-page"
                                         data-page-id={page.id}
-                                        style={{ 
-                                            display: 'flex', 
-                                            width: '100%', 
-                                            flexDirection: 'column', 
-                                            justifyContent: 'flex-start', 
-                                            alignItems: 'center', 
-                                            flexShrink: 0, 
-                                            alignSelf: 'stretch', 
+                                        style={{
+                                            display: 'flex',
+                                            width: '100%',
+                                            flexDirection: 'column',
+                                            justifyContent: 'flex-start',
+                                            alignItems: 'center',
+                                            flexShrink: 0,
+                                            alignSelf: 'stretch',
                                             borderRadius: '0',
-                                            overflow: 'visible', 
-                                            background: '#FFF', 
-                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)' 
+                                            overflow: 'visible',
+                                            background: '#FFF',
+                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
                                         }}
                                     >
                                         {/* Render the actual page content */}

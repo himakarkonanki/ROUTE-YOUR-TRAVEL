@@ -135,7 +135,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
         labelText: {
             color: "rgba(255, 255, 255, 0.70)",
             fontFamily: "Lato",
-            fontSize: "24px",
+            fontSize: "16px",
             fontStyle: "normal",
             fontWeight: 400,
             lineHeight: "32px"
@@ -271,10 +271,10 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             {!localData.backgroundImage && !isPreview && (
                 <div onClick={triggerFileInput} style={styles.uploadPrompt}>
                     <img src={upload} alt='upload' style={{ width: '64px', height: '64px' }} />
-                    <div style={{ color: '#FFF', fontFamily: 'Lato', fontSize: '24px', fontWeight: 600 }}>
+                    <div style={{ color: '#FFF', fontFamily: 'Lato', fontSize: '16px', fontWeight: 600 }}>
                         Add Background Image
                     </div>
-                    <div style={{ color: 'rgba(255,255,255,0.64)', fontFamily: 'Roboto', fontSize: '14px' }}>
+                    <div style={{ color: 'rgba(255,255,255,0.64)', fontFamily: 'Lato', fontSize: '12px' }}>
                         PNG, JPEG or SVG (Max. Documents size: 2 MB)
                     </div>
                 </div>
@@ -284,7 +284,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             {!localData.backgroundImage && isPreview && (
                 <div style={styles.uploadPromptPreview}>
                     <img src={upload} alt='upload' style={{ width: '64px', height: '64px', opacity: 0.5 }} />
-                    <div style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'Lato', fontSize: '24px', fontWeight: 600 }}>
+                    <div style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'Lato', fontSize: '16px', fontWeight: 600 }}>
                         No Background Image
                     </div>
                 </div>
@@ -404,7 +404,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                             <div style={{
                                 color: "rgba(255, 255, 255, 0.50)",
                                 fontFamily: "Lato",
-                                fontSize: "24px",
+                                fontSize: "16px",
                                 fontStyle: "normal",
                                 fontWeight: 400,
                                 lineHeight: "32px",
@@ -452,7 +452,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                             <div style={{
                                 color: "rgba(255, 255, 255, 0.50)",
                                 fontFamily: "Lato",
-                                fontSize: "24px",
+                                fontSize: "16px",
                                 fontStyle: "normal",
                                 fontWeight: 400,
                                 lineHeight: "32px",
@@ -506,7 +506,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     <div style={{
                         color: "#C46E6F",
                         fontFamily: "Lato",
-                        fontSize: "24px",
+                        fontSize: "16px",
                         fontStyle: "normal",
                         fontWeight: 400,
                         lineHeight: "32px",
@@ -549,7 +549,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                             <div style={{
                                 color: "rgba(255, 255, 255, 0.50)",
                                 fontFamily: "Lato",
-                                fontSize: "20px",
+                                fontSize: "16px",
                                 fontStyle: "italic",
                                 fontWeight: 400,
                                 lineHeight: "36px",
@@ -559,7 +559,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                             <div style={{
                                 color: "rgba(255, 255, 255, 0.50)",
                                 fontFamily: "Lato",
-                                fontSize: "20px",
+                                fontSize: "16px",
                                 fontStyle: "italic",
                                 fontWeight: 400,
                                 lineHeight: "36px",
@@ -576,7 +576,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                             <div style={{
                                 color: "rgba(255, 255, 255, 0.50)",
                                 fontFamily: "Lato",
-                                fontSize: "20px",
+                                fontSize: "16px",
                                 fontStyle: "italic",
                                 fontWeight: 400,
                                 lineHeight: "36px",

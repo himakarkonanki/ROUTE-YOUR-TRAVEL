@@ -26,16 +26,18 @@ const SECTION_OPTIONS = [
     { value: 'PlaneLanding', label: 'Flight', heading: 'Arrival' },
     { value: 'Landmark', label: 'Activity', heading: 'Activities' },
     { value: 'CarFront', label: 'Car', heading: 'Transfer' },
+    { value: 'Restaurant', label: 'Restaurant', heading: 'Dining' },
+    { value: 'Hotel', label: 'Hotel', heading: 'Hotel' },
 ];
 
 function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate, dayNumber }) {
     // Initialize local state from pageData
     const [localData, setLocalData] = useState({
         destination: '',
-        arrivalDetails: '',
-        transferDetails: '',
-        dropDetails: '',
-        activityDetails: ['', '', ''],
+        arrivalDetails: [''], // Array of sub-fields
+        transferDetails: [''], // Array of sub-fields
+        dropDetails: [''], // Array of sub-fields
+        activityDetails: [''], // Single field by default for activities
         uploadedImage: null,
         mealSelections: {
             breakfast: false,
@@ -65,7 +67,6 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
     });
 
     const [openDropdownIndex, setOpenDropdownIndex] = useState(null);
-    const [activeActivityIndex, setActiveActivityIndex] = useState(null);
     const dropdownRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -78,12 +79,33 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
     // Sync local state with incoming pageData when it changes
     useEffect(() => {
         if (pageData) {
+            // Helper function to ensure data is in array format
+            const ensureArray = (data) => {
+                if (!data) return [''];
+                if (Array.isArray(data)) return data.length > 0 ? data : [''];
+                if (typeof data === 'string') return data ? [data] : [''];
+                return [''];
+            };
+
+            // Special handling for activities - only single field if it's empty or first load
+            const ensureActivityArray = (data) => {
+                if (!data) return [''];
+                if (Array.isArray(data)) {
+                    // If all fields are empty, show only one
+                    const nonEmptyFields = data.filter(item => item && item.trim());
+                    if (nonEmptyFields.length === 0) return [''];
+                    return data.length > 0 ? data : [''];
+                }
+                if (typeof data === 'string') return data ? [data] : [''];
+                return [''];
+            };
+
             setLocalData({
                 destination: pageData.destination || '',
-                arrivalDetails: pageData.arrivalDetails || '',
-                transferDetails: pageData.transferDetails || '',
-                dropDetails: pageData.dropDetails || '',
-                activityDetails: pageData.activityDetails || ['', '', ''],
+                arrivalDetails: ensureArray(pageData.arrivalDetails),
+                transferDetails: ensureArray(pageData.transferDetails),
+                dropDetails: ensureArray(pageData.dropDetails),
+                activityDetails: ensureActivityArray(pageData.activityDetails), // Special handling
                 uploadedImage: pageData.uploadedImage || null,
                 mealSelections: pageData.mealSelections || {
                     breakfast: false,
@@ -102,7 +124,10 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                     activity: 'Activities',
                     drop: 'Drop',
                 },
-                dynamicSections: pageData.dynamicSections || [],
+                dynamicSections: (pageData.dynamicSections || []).map(section => ({
+                    ...section,
+                    details: Array.isArray(section.details) ? section.details : [section.details || '']
+                })),
                 visibleSections: pageData.visibleSections || {
                     arrival: true,
                     transfer: true,
@@ -135,20 +160,203 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleActivityChange = (index, value) => {
-        const newActivities = [...localData.activityDetails];
-        newActivities[index] = value;
-        updateParent({ activityDetails: newActivities });
+    // Helper function to calculate total content fields for responsive image height
+    const getTotalContentHeight = () => {
+        let totalFields = 0;
+        
+        // Count fields in default sections (only visible ones)
+        if (localData.visibleSections.arrival) totalFields += localData.arrivalDetails.length;
+        if (localData.visibleSections.transfer) totalFields += localData.transferDetails.length;
+        if (localData.visibleSections.activity) totalFields += localData.activityDetails.length;
+        if (localData.visibleSections.drop) totalFields += localData.dropDetails.length;
+        
+        // Count fields in dynamic sections
+        localData.dynamicSections.forEach(section => {
+            totalFields += Array.isArray(section.details) ? section.details.length : 1;
+        });
+        
+        // Calculate base sections (visible main sections + dynamic sections)
+        const visibleMainSections = Object.values(localData.visibleSections).filter(Boolean).length;
+        const totalSections = visibleMainSections + localData.dynamicSections.length;
+        const baseFields = totalSections; // One field per section as baseline
+        
+        // Each additional field beyond the base reduces height by 20px
+        const extraFields = Math.max(0, totalFields - baseFields);
+        
+        // Each additional section beyond 4 also reduces height by 30px
+        const extraSections = Math.max(0, totalSections - 4);
+        const sectionReduction = extraSections * 30;
+        
+        return extraFields * 20 + sectionReduction;
     };
 
-    const handleActivityFocus = (index) => {
-        setActiveActivityIndex(index);
+    // Helper function to check if any section has 3+ subfields (restricts further content)
+    const hasRestrictiveSubfields = () => {
+        if (localData.arrivalDetails.length >= 3) return true;
+        if (localData.transferDetails.length >= 3) return true;
+        if (localData.activityDetails.length >= 3) return true;
+        if (localData.dropDetails.length >= 3) return true;
+        return localData.dynamicSections.some(section => 
+            Array.isArray(section.details) ? section.details.length >= 3 : false
+        );
     };
 
-    const handleActivityBlur = () => {
-        setActiveActivityIndex(null);
+    // Helper function to check if any section has 5 subfields (maximum allowed)
+    const hasMaxSubfields = () => {
+        if (localData.arrivalDetails.length >= 5) return true;
+        if (localData.transferDetails.length >= 5) return true;
+        if (localData.activityDetails.length >= 5) return true;
+        if (localData.dropDetails.length >= 5) return true;
+        return localData.dynamicSections.some(section => 
+            Array.isArray(section.details) ? section.details.length >= 5 : false
+        );
     };
 
+    // Helper function to check if current section can add more fields
+    const canSectionAddField = (sectionKey, sectionId = null) => {
+        const currentSectionLength = sectionId 
+            ? localData.dynamicSections.find(s => s.id === sectionId)?.details?.length || 0
+            : localData[`${sectionKey}Details`]?.length || 0;
+
+        // Allow each section up to 5 fields maximum
+        return currentSectionLength < 5;
+    };
+
+    // Helper function to calculate approximate content height
+const calculateContentHeight = () => {
+    // Base heights
+    const responsiveReduction = getTotalContentHeight();
+    const imageHeight = Math.max(284, 584 - responsiveReduction);
+    const titleSectionHeight = 160;
+    const sectionBaseHeight = 60;
+    const fieldHeight = 32;
+
+    let totalFieldHeight = 0;
+    totalFieldHeight += localData.arrivalDetails.length * fieldHeight;
+    totalFieldHeight += localData.transferDetails.length * fieldHeight;
+    totalFieldHeight += localData.activityDetails.length * fieldHeight;
+    totalFieldHeight += localData.dropDetails.length * fieldHeight;
+
+    let dynamicSectionHeight = 0;
+    localData.dynamicSections.forEach(section => {
+        dynamicSectionHeight += sectionBaseHeight;
+        dynamicSectionHeight += (Array.isArray(section.details) ? section.details.length : 1) * fieldHeight;
+    });
+
+    const spacing = localData.dynamicSections.length * 12;
+    const padding = 24; // Further reduced for less gap
+
+    return imageHeight + titleSectionHeight + (4 * sectionBaseHeight) + totalFieldHeight + dynamicSectionHeight + spacing + padding;
+};
+
+const canAddMoreContent = () => {
+    const maxAllowedHeight = 1480; // Allow more content before hitting the footer
+    const currentHeight = calculateContentHeight();
+    const minimumGapFromFooter = 24; // Match the new padding
+    const estimatedNewContentHeight = 36; // Slightly less for more flexibility
+    const totalHeightWithNewContent = currentHeight + estimatedNewContentHeight;
+    return totalHeightWithNewContent <= (maxAllowedHeight - minimumGapFromFooter);
+};
+
+    // Handle sub-field changes
+    const handleSubFieldChange = (sectionKey, index, value) => {
+        const fieldName = `${sectionKey}Details`;
+        const newSubFields = [...localData[fieldName]];
+        newSubFields[index] = value;
+        updateParent({ [fieldName]: newSubFields });
+    };
+
+    // Handle Enter key press for general sections (not activities)
+    const handleSubFieldKeyPress = (e, sectionKey, index) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const fieldName = `${sectionKey}Details`;
+            const currentValue = localData[fieldName][index];
+
+            // Strict height limit check - this overrides individual section limits
+            const hasSpace = canAddMoreContent();
+            const canAddToThisSection = canSectionAddField(sectionKey);
+            
+            // Only add new field if current field has content, section can add fields, AND strict height allows
+            if (currentValue && currentValue.trim() && canAddToThisSection && hasSpace) {
+                const newSubFields = [...localData[fieldName]];
+                newSubFields.splice(index + 1, 0, ''); // Add empty field after current one
+                updateParent({ [fieldName]: newSubFields });
+
+                // Focus on the new field after state update
+                setTimeout(() => {
+                    const newFieldId = getUniqueId(`${sectionKey}_details`, index + 1);
+                    const newField = document.getElementById(newFieldId);
+                    if (newField) newField.focus();
+                }, 0);
+            }
+        } else if (e.key === 'Backspace') {
+            const fieldName = `${sectionKey}Details`;
+            const currentValue = localData[fieldName][index];
+
+            // Remove empty field if backspace is pressed and it's not the only field
+            if (!currentValue && localData[fieldName].length > 1) {
+                e.preventDefault();
+                const newSubFields = [...localData[fieldName]];
+                newSubFields.splice(index, 1);
+                updateParent({ [fieldName]: newSubFields });
+
+                // Focus on previous field
+                setTimeout(() => {
+                    const prevIndex = index > 0 ? index - 1 : 0;
+                    const prevFieldId = getUniqueId(`${sectionKey}_details`, prevIndex);
+                    const prevField = document.getElementById(prevFieldId);
+                    if (prevField) prevField.focus();
+                }, 0);
+            }
+        }
+    };
+
+    // Special handler for activities section
+    const handleActivityKeyPress = (e, index) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const currentValue = localData.activityDetails[index];
+
+            // Strict height limit check - this overrides individual section limits
+            const hasSpace = canAddMoreContent();
+            const canAddToThisSection = canSectionAddField('activity');
+
+            // Only add new field if current field has content, section can add fields, AND strict height allows
+            if (currentValue && currentValue.trim() && canAddToThisSection && hasSpace) {
+                const newActivityDetails = [...localData.activityDetails];
+                newActivityDetails.splice(index + 1, 0, ''); // Add empty field after current one
+                updateParent({ activityDetails: newActivityDetails });
+
+                // Focus on the new field after state update
+                setTimeout(() => {
+                    const newFieldId = getUniqueId('activity_details', index + 1);
+                    const newField = document.getElementById(newFieldId);
+                    if (newField) newField.focus();
+                }, 0);
+            }
+        } else if (e.key === 'Backspace') {
+            const currentValue = localData.activityDetails[index];
+
+            // Only allow deletion if there's more than 1 field and current is empty
+            if (!currentValue && localData.activityDetails.length > 1) {
+                e.preventDefault();
+                const newActivityDetails = [...localData.activityDetails];
+                newActivityDetails.splice(index, 1);
+                updateParent({ activityDetails: newActivityDetails });
+
+                // Focus on previous field
+                setTimeout(() => {
+                    const prevIndex = index > 0 ? index - 1 : 0;
+                    const prevFieldId = getUniqueId('activity_details', prevIndex);
+                    const prevField = document.getElementById(prevFieldId);
+                    if (prevField) prevField.focus();
+                }, 0);
+            }
+        }
+    };
+
+    // Handle meal toggle
     const handleMealToggle = (meal) => {
         const updatedMeals = {
             ...localData.mealSelections,
@@ -165,17 +373,106 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
         updateParent({ sectionHeadings: updatedHeadings });
     };
 
-    const handleDynamicSectionChange = (sectionId, field, value) => {
-        const updatedSections = localData.dynamicSections.map(section =>
-            section.id === sectionId
-                ? { ...section, [field]: value }
-                : section
-        );
+    const handleDynamicSectionChange = (sectionId, field, value, index = null) => {
+        const updatedSections = localData.dynamicSections.map(section => {
+            if (section.id === sectionId) {
+                if (field === 'details' && index !== null) {
+                    // Handle array details
+                    const newDetails = [...section.details];
+                    newDetails[index] = value;
+                    return { ...section, details: newDetails };
+                } else {
+                    // Handle other fields like heading
+                    return { ...section, [field]: value };
+                }
+            }
+            return section;
+        });
         updateParent({ dynamicSections: updatedSections });
     };
 
+    // Handle Enter key press for dynamic sections
+    const handleDynamicSectionKeyPress = (e, sectionId, index) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const section = localData.dynamicSections.find(s => s.id === sectionId);
+            const currentValue = section.details[index];
+
+            // Strict height limit check - this overrides individual section limits
+            const hasSpace = canAddMoreContent();
+            const canAddToThisSection = canSectionAddField(null, sectionId);
+
+            // Only add new field if current field has content, section can add fields, AND strict height allows
+            if (currentValue && currentValue.trim() && canAddToThisSection && hasSpace) {
+                const updatedSections = localData.dynamicSections.map(sec =>
+                    sec.id === sectionId
+                        ? { ...sec, details: [...sec.details.slice(0, index + 1), '', ...sec.details.slice(index + 1)] }
+                        : sec
+                );
+                updateParent({ dynamicSections: updatedSections });
+
+                // Focus on the new field after state update
+                setTimeout(() => {
+                    const newFieldId = getUniqueId('dynamic_section_details', `${sectionId}_${index + 1}`);
+                    const newField = document.getElementById(newFieldId);
+                    if (newField) newField.focus();
+                }, 0);
+            }
+        } else if (e.key === 'Backspace') {
+            const section = localData.dynamicSections.find(s => s.id === sectionId);
+            const currentValue = section.details[index];
+
+            // Remove empty field if backspace is pressed and it's not the only field
+            if (!currentValue && section.details.length > 1) {
+                e.preventDefault();
+                const updatedSections = localData.dynamicSections.map(sec =>
+                    sec.id === sectionId
+                        ? { ...sec, details: sec.details.filter((_, i) => i !== index) }
+                        : sec
+                );
+                updateParent({ dynamicSections: updatedSections });
+
+                // Focus on previous field
+                setTimeout(() => {
+                    const prevIndex = index > 0 ? index - 1 : 0;
+                    const prevFieldId = getUniqueId('dynamic_section_details', `${sectionId}_${prevIndex}`);
+                    const prevField = document.getElementById(prevFieldId);
+                    if (prevField) prevField.focus();
+                }, 0);
+            }
+        }
+    };
+
     const handleAddSection = (newSection) => {
-        const updatedSections = [...localData.dynamicSections, newSection];
+        // Maximum 2 dynamic sections allowed
+        const maxSections = 2;
+        const hasSpace = canAddMoreContent();
+        
+        console.log('handleAddSection called:', {
+            currentSections: localData.dynamicSections.length,
+            maxSections,
+            hasSpace,
+            newSection
+        });
+        
+        // Check both section limit and available space
+        if (localData.dynamicSections.length >= maxSections) {
+            console.log('Section limit reached');
+            return;
+        }
+        
+        if (!hasSpace) {
+            console.log('No space available');
+            return;
+        }
+        
+        // Ensure details is an array with exactly one field
+        const sectionWithArrayDetails = {
+            ...newSection,
+            details: [''] // Always start with a single empty field
+        };
+        const updatedSections = [...localData.dynamicSections, sectionWithArrayDetails];
+        console.log('Adding section:', sectionWithArrayDetails);
         updateParent({ dynamicSections: updatedSections });
     };
 
@@ -184,27 +481,23 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
         updateParent({ dynamicSections: updatedSections });
     };
 
-    // New function to handle deleting main sections
+    // Function to handle deleting main sections
     const handleDeleteMainSection = (sectionKey) => {
         const updatedVisibleSections = {
             ...localData.visibleSections,
             [sectionKey]: false
         };
-        
+
         // Also clear the data for the deleted section
         const clearedData = {};
-        if (sectionKey === 'arrival') clearedData.arrivalDetails = '';
-        if (sectionKey === 'transfer') clearedData.transferDetails = '';
-        if (sectionKey === 'drop') clearedData.dropDetails = '';
-        if (sectionKey === 'activity') clearedData.activityDetails = ['', '', ''];
+        const fieldName = `${sectionKey}Details`;
+        clearedData[fieldName] = [''];
 
-        updateParent({ 
+        updateParent({
             visibleSections: updatedVisibleSections,
             ...clearedData
         });
     };
-
-
 
     const handleImageUpload = (file, imageUrl) => {
         updateParent({ uploadedImage: imageUrl });
@@ -221,34 +514,80 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
         setOpenDropdownIndex(null);
     };
 
-    const renderDropdown = (key, index) => {
+    // Handle icon change for dynamic sections
+    const handleDynamicIconChange = (sectionId, iconValue, heading) => {
+        const updatedSections = localData.dynamicSections.map(section =>
+            section.id === sectionId
+                ? { ...section, icon: iconValue, heading: heading }
+                : section
+        );
+        updateParent({ dynamicSections: updatedSections });
+        setOpenDropdownIndex(null);
+    };
+
+    const renderDropdown = (key, index, isDynamic = false, sectionId = null) => {
         if (isPreview) return null;
 
         return openDropdownIndex === index ? (
             <div ref={dropdownRef} style={{ position: 'absolute', top: '40px', left: '0', zIndex: 100, backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: '8px', width: '180px', boxShadow: '0px 4px 8px rgba(0,0,0,0.1)', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onDragStart={e => e.preventDefault()}>
                 {SECTION_OPTIONS.map((opt) => (
-                    <div key={opt.value} onClick={() => handleIconChange(key, opt.value, opt.heading)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', cursor: 'pointer', borderBottom: '1px solid #eee', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'} onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'} onDragStart={e => e.preventDefault()}>
+                    <div 
+                        key={opt.value} 
+                        onClick={() => {
+                            if (isDynamic && sectionId) {
+                                handleDynamicIconChange(sectionId, opt.value, opt.heading);
+                            } else {
+                                handleIconChange(key, opt.value, opt.heading);
+                            }
+                        }} 
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', cursor: 'pointer', borderBottom: '1px solid #eee', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} 
+                        onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'} 
+                        onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'} 
+                        onDragStart={e => e.preventDefault()}
+                    >
                         <img src={ICON_OPTIONS[opt.value]} alt={opt.label} width={16} height={16} draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
-                        <span style={{ fontFamily: 'Lato' ,fontSize: '14px', color: '#333', userSelect: 'none' }}>{opt.label}</span>
+                        <span style={{ fontFamily: 'Lato', fontSize: '14px', color: '#333', userSelect: 'none' }}>{opt.label}</span>
                     </div>
                 ))}
             </div>
         ) : null;
     };
 
-    const renderDynamicSection = (section) => {
+    const renderDynamicSection = (section, index) => {
+        // Calculate a unique dropdown index for dynamic sections
+        const dynamicDropdownIndex = `dynamic_${section.id}`;
+        
         return (
             <div key={section.id} style={{ display: 'flex', width: '928px', padding: '4px', alignItems: 'flex-start', position: 'relative' }}>
-                <div style={{ display: 'flex', padding: '8px', justifyContent: 'center', alignItems: 'center', gap: '8px', borderRadius: '28px', background: 'rgba(243, 63, 63, 0.06)', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onDragStart={e => e.preventDefault()}>
+                <div 
+                    style={{ 
+                        display: 'flex', 
+                        padding: '8px', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        borderRadius: '28px', 
+                        background: 'rgba(243, 63, 63, 0.06)', 
+                        position: 'relative',
+                        cursor: isPreview ? 'default' : 'pointer',
+                        userSelect: 'none', 
+                        WebkitUserSelect: 'none', 
+                        MozUserSelect: 'none', 
+                        msUserSelect: 'none' 
+                    }} 
+                    onClick={!isPreview ? () => setOpenDropdownIndex(openDropdownIndex === dynamicDropdownIndex ? null : dynamicDropdownIndex) : undefined} 
+                    onDragStart={e => e.preventDefault()}
+                >
                     <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1', userSelect: 'none' }}>
                         <img src={ICON_OPTIONS[section.icon]} alt={section.type} draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
                     </div>
+                    {renderDropdown(null, dynamicDropdownIndex, true, section.id)}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', flex: '1 0 0' }}>
                     <div style={{ display: 'flex', padding: '0 0 4px 16px', justifyContent: 'center', alignItems: 'center', gap: '10px', alignSelf: 'stretch' }}>
                         {isPreview ? (
-                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
+                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
                                 {section.heading}
                             </div>
                         ) : (
@@ -258,26 +597,53 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 id={getUniqueId('dynamic_section_heading', section.id)}
                                 name={getUniqueId('dynamic_section_heading', section.id)}
                                 onChange={(e) => handleDynamicSectionChange(section.id, 'heading', e.target.value)}
-                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
+                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', padding: '8px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
-                        {isPreview ? (
-                            <div style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0' }}>
-                                {section.details || `No ${section.heading.toLowerCase()} details`}
-                            </div>
+                    <div style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'flex-start', flexDirection: 'column', alignSelf: 'stretch' }}>
+                        {Array.isArray(section.details) ? (
+                            section.details.map((detail, detailIndex) => (
+                                <div key={detailIndex} style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch', marginBottom: detailIndex < section.details.length - 1 ? '0px' : '0px' }}>
+                                    {isPreview ? (
+                                        <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                            {detail || `No ${section.heading.toLowerCase()} details`}
+                                        </div>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={detail}
+                                            id={getUniqueId('dynamic_section_details', `${section.id}_${detailIndex}`)}
+                                            name={getUniqueId('dynamic_section_details', `${section.id}_${detailIndex}`)}
+                                            onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value, detailIndex)}
+                                            onKeyDown={(e) => handleDynamicSectionKeyPress(e, section.id, detailIndex)}
+                                            placeholder={`Enter ${section.heading.toLowerCase()} details`}
+                                            style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                        />
+                                    )}
+                                </div>
+                            ))
                         ) : (
-                            <input
-                                type="text"
-                                value={section.details}
-                                id={getUniqueId('dynamic_section_details', section.id)}
-                                name={getUniqueId('dynamic_section_details', section.id)}
-                                onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value)}
-                                placeholder={`Enter ${section.heading.toLowerCase()} details`}
-                                style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
-                            />
+                            // Fallback for old format - single detail field
+                            <div style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch' }}>
+                                {isPreview ? (
+                                    <div style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                        {section.details || `No ${section.heading.toLowerCase()} details`}
+                                    </div>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        value={section.details}
+                                        id={getUniqueId('dynamic_section_details', section.id)}
+                                        name={getUniqueId('dynamic_section_details', section.id)}
+                                        onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value)}
+                                        onKeyDown={(e) => handleDynamicSectionKeyPress(e, section.id, 0)}
+                                        placeholder={`Enter ${section.heading.toLowerCase()} details`}
+                                        style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                    />
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -304,39 +670,13 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                     <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1', userSelect: 'none' }}>
                         <img src={ICON_OPTIONS[localData.icons[sectionKey]]} alt={sectionKey} draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
                     </div>
-                    {/* Drag indicator - positioned below the icon when activity is active */}
-                    {sectionKey === 'activity' && activeActivityIndex !== null && !isPreview && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '48px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            display: 'flex',
-                            padding: '8px 16px',
-                            alignItems: 'center',
-                            alignSelf: 'stretch',
-                            borderRadius: '12px',
-                            background: 'rgba(14, 19, 40, 0.06)',
-                            zIndex: 10
-                        }}>
-                            <img 
-                                src={drag_indicator} 
-                                alt="drag indicator" 
-                                width={20} 
-                                height={20} 
-                                draggable={false} 
-                                onDragStart={e => e.preventDefault()} 
-                                style={{ userSelect: 'none', pointerEvents: 'none' }} 
-                            />
-                        </div>
-                    )}
                     {renderDropdown(sectionKey, dropdownIndex)}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', flex: '1 0 0' }}>
                     <div style={{ display: 'flex', padding: '0 0 4px 16px', justifyContent: 'center', alignItems: 'center', gap: '10px', alignSelf: 'stretch' }}>
                         {isPreview ? (
-                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
+                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
                                 {localData.sectionHeadings[sectionKey]}
                             </div>
                         ) : (
@@ -346,7 +686,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 name={getUniqueId(`${sectionKey}_heading`)}
                                 value={localData.sectionHeadings[sectionKey]}
                                 onChange={(e) => handleSectionHeadingChange(sectionKey, e.target.value)}
-                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
+                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
@@ -364,15 +704,16 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
     };
 
     return (
-        <div style={{ display: 'flex', width: '1088px', minHeight: '1540px', flexDirection: 'column', backgroundColor: '#fff', position: 'relative' }}>
+        <div style={{ display: 'flex', width: '1088px', height: '1540px', flexDirection: 'column', backgroundColor: '#fff', position: 'relative', overflow: 'hidden' }}>
             {/* Main Content Area */}
-            <div style={{ display: 'flex', width: '100%', padding: '0 64px', flexDirection: 'column', alignItems: 'center', gap: '32px', flex: 1, paddingBottom: '80px' }}>
-                {/* Image Upload Component */}
+            <div style={{ display: 'flex', width: '100%', padding: '0 64px', flexDirection: 'column', alignItems: 'center', gap: '32px', flex: 1, paddingBottom: '0px' }}>
+                {/* Image Upload Component - Dynamic height based on all content */}
                 {localData.uploadedImage ? (
                     <div style={{
                         display: 'flex',
                         width: '1088px',
-                        height: '584px',
+                        height: `${Math.max(284, 584 - getTotalContentHeight())}px`, // Responsive to all content
+                        minHeight: '284px', // Minimum height
                         justifyContent: 'center',
                         alignItems: 'center',
                         flexShrink: 0,
@@ -396,7 +737,17 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                     </div>
                 ) : (
                     !isPreview && (
-                        <ImageUpload onImageUpload={handleImageUpload} existingImage={localData.uploadedImage} />
+                        <div style={{
+                            width: '1088px',
+                            marginLeft: '-64px',
+                            marginRight: '-64px',
+                        }}>
+                            <ImageUpload 
+                                heightReduction={getTotalContentHeight()}
+                                onImageUpload={handleImageUpload} 
+                                existingImage={localData.uploadedImage} 
+                            />
+                        </div>
                     )
                 )}
 
@@ -405,7 +756,8 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                     <div style={{
                         display: 'flex',
                         width: '1088px',
-                        height: '584px',
+                        height: `${Math.max(284, 584 - getTotalContentHeight())}px`, // Responsive to all content
+                        minHeight: '284px',
                         justifyContent: 'center',
                         alignItems: 'center',
                         flexShrink: 0,
@@ -413,12 +765,12 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                         borderRadius: '32px 32px 0 0',
                         marginLeft: '-64px',
                         marginRight: '-64px',
-                        border: '2px dashed rgba(243, 63, 63, 0.3)'
+                        border: '2px dashed rgba(243, 63, 63, 0.3)',
                     }}>
                         <div style={{
                             color: 'rgba(14, 19, 40, 0.5)',
                             fontFamily: 'Lato',
-                            fontSize: '24px',
+                            fontSize: '16px',
                             fontWeight: 600,
                         }}>
                             No image uploaded
@@ -436,7 +788,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
 
                     <div style={{ display: 'flex', width: '960px', padding: '8px 16px', alignItems: 'center', borderRadius: '16px' }}>
                         {isPreview ? (
-                            <div style={{ color: localData.destination ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '48px', fontStyle: 'normal', fontWeight: 400, lineHeight: '56px', textTransform: 'capitalize', width: '920px', flexShrink: 0 }}>
+                            <div style={{ color: localData.destination ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '36px', fontStyle: 'normal', fontWeight: 400, lineHeight: '56px', textTransform: 'capitalize', width: '920px', flexShrink: 0 }}>
                                 {localData.destination || 'Enter Destination'}
                             </div>
                         ) : (
@@ -447,7 +799,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 name={getUniqueId('destination')}
                                 onChange={(e) => updateParent({ destination: e.target.value })}
                                 placeholder="Enter Destination"
-                                style={{ color: localData.destination ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '48px', fontStyle: 'normal', fontWeight: 400, lineHeight: '56px', textTransform: 'capitalize', width: '920px', flexShrink: 0, border: 'none', outline: 'none', background: 'transparent' }}
+                                style={{ color: localData.destination ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '36px', fontStyle: 'normal', fontWeight: 400, lineHeight: '56px', textTransform: 'capitalize', width: '920px', flexShrink: 0, border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
@@ -489,7 +841,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                                     </svg>
                                                 )}
                                             </div>
-                                            <span style={{ fontFamily: 'Lato', fontSize: '16px', fontWeight: '600', textTransform: 'uppercase', color: selected ? '#0E1328' : '#A3A3A3', userSelect: 'none' }}>
+                                            <span style={{ fontFamily: 'Lato', fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', color: selected ? '#0E1328' : '#A3A3A3', userSelect: 'none' }}>
                                                 {meal}
                                             </span>
                                         </div>
@@ -499,72 +851,81 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                     </div>
                 </div>
 
-                {/* Main Content Frame */}
-                <div style={{ display: 'flex', padding: '0 16px', flexDirection: 'column', alignItems: 'flex-start', gap: '24px', alignSelf: 'stretch' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '16px', alignSelf: 'stretch' }}>
-                        
+                {/* Main Content Frame - Reduced gap for better spacing */}
+                <div style={{ display: 'flex', padding: '0 16px', flexDirection: 'column', alignItems: 'flex-start', gap: '16px', alignSelf: 'stretch', marginBottom: '0px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px', alignSelf: 'stretch' }}>
+
                         {/* Arrival Section */}
                         {renderMainSection('arrival', 0, (
-                            <div style={{ display: 'flex', padding: '8px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
-                                {isPreview ? (
-                                    <div style={{ color: localData.arrivalDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0' }}>
-                                        {localData.arrivalDetails || 'No arrival details'}
+                            <div>
+                                {localData.arrivalDetails.map((detail, index) => (
+                                    <div key={index} style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
+                                        {isPreview ? (
+                                            <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                                {detail || 'No arrival details'}
+                                            </div>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                id={getUniqueId('arrival_details', index)}
+                                                name={getUniqueId('arrival_details', index)}
+                                                value={detail}
+                                                onChange={(e) => handleSubFieldChange('arrival', index, e.target.value)}
+                                                onKeyDown={(e) => handleSubFieldKeyPress(e, 'arrival', index)}
+                                                placeholder="Enter the arrival details"
+                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                            />
+                                        )}
                                     </div>
-                                ) : (
-                                    <input
-                                        type="text"
-                                        id={getUniqueId('arrival_details')}
-                                        name={getUniqueId('arrival_details')}
-                                        value={localData.arrivalDetails}
-                                        onChange={(e) => updateParent({ arrivalDetails: e.target.value })}
-                                        placeholder="Enter the arrival details"
-                                        style={{ color: localData.arrivalDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
-                                    />
-                                )}
+                                ))}
                             </div>
                         ))}
 
                         {/* Transfer Section */}
                         {renderMainSection('transfer', 1, (
-                            <div style={{ display: 'flex', padding: '8px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
-                                {isPreview ? (
-                                    <div style={{ color: localData.transferDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0' }}>
-                                        {localData.transferDetails || 'No transfer details'}
-                                    </div>
-                                ) : (
-                                    <input
-                                        type="text"
-                                        id={getUniqueId('transfer_details')}
-                                        name={getUniqueId('transfer_details')}
-                                        value={localData.transferDetails}
-                                        onChange={(e) => updateParent({ transferDetails: e.target.value })}
-                                        placeholder="Enter the transfer details"
-                                        style={{ color: localData.transferDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
-                                    />
-                                )}
-                            </div>
-                        ))}
-
-                        {/* Activities Section */}
-                        {renderMainSection('activity', 2, (
                             <div>
-                                {localData.activityDetails.map((activity, index) => (
-                                    <div key={index} style={{ display: 'flex', padding: '8px 16px', alignItems: 'center', alignSelf: 'stretch', borderRadius: '12px' }}>
+                                {localData.transferDetails.map((detail, index) => (
+                                    <div key={index} style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
                                         {isPreview ? (
-                                            <div style={{ color: activity ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0' }}>
-                                                {activity || `No activity ${index + 1}`}
+                                            <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                                {detail || 'No transfer details'}
                                             </div>
                                         ) : (
                                             <input
                                                 type="text"
-                                                id={getUniqueId('activity', index)}
-                                                name={getUniqueId('activity', index)}
-                                                value={activity}
-                                                onChange={(e) => handleActivityChange(index, e.target.value)}
-                                                onFocus={() => handleActivityFocus(index)}
-                                                onBlur={handleActivityBlur}
-                                                placeholder="Enter activity details"
-                                                style={{ color: activity ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
+                                                id={getUniqueId('transfer_details', index)}
+                                                name={getUniqueId('transfer_details', index)}
+                                                value={detail}
+                                                onChange={(e) => handleSubFieldChange('transfer', index, e.target.value)}
+                                                onKeyDown={(e) => handleSubFieldKeyPress(e, 'transfer', index)}
+                                                placeholder="Enter the transfer details"
+                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+
+                        {/* Activities Section - Special handling */}
+                        {renderMainSection('activity', 2, (
+                            <div>
+                                {localData.activityDetails.map((detail, index) => (
+                                    <div key={index} style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
+                                        {isPreview ? (
+                                            <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                                {detail || 'No activity details'}
+                                            </div>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                id={getUniqueId('activity_details', index)}
+                                                name={getUniqueId('activity_details', index)}
+                                                value={detail}
+                                                onChange={(e) => handleSubFieldChange('activity', index, e.target.value)}
+                                                onKeyDown={(e) => handleActivityKeyPress(e, index)} // Special handler for activities
+                                                placeholder="Enter the activity details"
+                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
                                             />
                                         )}
                                     </div>
@@ -574,36 +935,43 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
 
                         {/* Drop Section */}
                         {renderMainSection('drop', 3, (
-                            <div style={{ display: 'flex', padding: '8px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
-                                {isPreview ? (
-                                    <div style={{ color: localData.dropDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0' }}>
-                                        {localData.dropDetails || 'No drop details'}
+                            <div>
+                                {localData.dropDetails.map((detail, index) => (
+                                    <div key={index} style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
+                                        {isPreview ? (
+                                            <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                                {detail || 'No drop details'}
+                                            </div>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                id={getUniqueId('drop_details', index)}
+                                                name={getUniqueId('drop_details', index)}
+                                                value={detail}
+                                                onChange={(e) => handleSubFieldChange('drop', index, e.target.value)}
+                                                onKeyDown={(e) => handleSubFieldKeyPress(e, 'drop', index)}
+                                                placeholder="Enter the drop details"
+                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                            />
+                                        )}
                                     </div>
-                                ) : (
-                                    <input
-                                        type="text"
-                                        id={getUniqueId('drop_details')}
-                                        name={getUniqueId('drop_details')}
-                                        value={localData.dropDetails}
-                                        onChange={(e) => updateParent({ dropDetails: e.target.value })}
-                                        placeholder="Enter the drop details"
-                                        style={{ color: localData.dropDetails ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
-                                    />
-                                )}
+                                ))}
                             </div>
                         ))}
 
                         {/* Render Dynamic Sections */}
-                        {localData.dynamicSections.map(renderDynamicSection)}
+                        {localData.dynamicSections.map((section, index) => renderDynamicSection(section, index))}
                     </div>
 
-                    {/* Use the AddSectionTray component - hide in preview */}
-                    {!isPreview && <AddSectionTray onAddSection={handleAddSection} />}
+                    {/* Use the AddSectionTray component - Allow up to 2 dynamic sections */}
+                    {!isPreview && localData.dynamicSections.length < 2 && <AddSectionTray onAddSection={handleAddSection} />}
                 </div>
             </div>
 
             {/* Footer - Fixed at bottom */}
-            <Footer pageNumber={pageNumber} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+                <Footer pageNumber={pageNumber} />
+            </div>
         </div>
     );
 }

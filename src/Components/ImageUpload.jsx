@@ -2,11 +2,19 @@
 import React, { useState, useRef } from 'react';
 import upload_image from '../assets/icons/upload_image.svg';
 
-function ImageUpload({ onImageUpload, existingImage }) {
+function ImageUpload({ onImageUpload, existingImage, heightReduction = 0 }) {
     const [dragActive, setDragActive] = useState(false);
     const [uploadedImage, setUploadedImage] = useState(existingImage || null);
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef(null);
+
+    // Calculate responsive height
+    const baseHeight = 584;
+    const calculatedHeight = Math.max(284, baseHeight - heightReduction);
+    
+    // Calculate inner content height proportionally
+    const innerBaseHeight = 520;
+    const innerCalculatedHeight = Math.max(220, innerBaseHeight - heightReduction);
 
     const handleFiles = (files) => {
         const file = files[0];
@@ -26,7 +34,7 @@ function ImageUpload({ onImageUpload, existingImage }) {
 
         setIsUploading(true);
 
-        // ✅ Convert to base64 instead of blob URL
+        // Convert to base64 instead of blob URL
         const reader = new FileReader();
         reader.onloadend = () => {
             const base64Image = reader.result;
@@ -74,7 +82,7 @@ function ImageUpload({ onImageUpload, existingImage }) {
             style={{
                 display: 'flex',
                 width: '1088px',
-                height: '584px',
+                height: `${calculatedHeight}px`,
                 justifyContent: 'center',
                 alignItems: 'center',
                 flexShrink: 0,
@@ -87,7 +95,7 @@ function ImageUpload({ onImageUpload, existingImage }) {
                     style={{
                         display: 'flex',
                         width: '1088px',
-                        height: '584px',
+                        height: `${calculatedHeight}px`,
                         cursor: 'pointer',
                         position: 'relative',
                         borderRadius: '32px 32px 0 0',
@@ -114,7 +122,7 @@ function ImageUpload({ onImageUpload, existingImage }) {
                     style={{
                         display: 'flex',
                         width: '1024px',
-                        height: '520px',
+                        height: `${innerCalculatedHeight}px`,
                         padding: '24px 40px',
                         flexDirection: 'column',
                         justifyContent: 'center',
@@ -127,7 +135,6 @@ function ImageUpload({ onImageUpload, existingImage }) {
                             : '1px dashed rgba(243, 63, 63, 0.64)',
                         backgroundColor: dragActive ? 'rgba(243, 63, 63, 0.05)' : 'transparent',
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease',
                     }}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
@@ -185,7 +192,7 @@ function ImageUpload({ onImageUpload, existingImage }) {
                                         color: '#0E1328',
                                         textAlign: 'center',
                                         fontFamily: 'Lato',
-                                        fontSize: '24px',
+                                        fontSize: '16px',
                                         fontWeight: 600,
                                         lineHeight: '36px',
                                     }}>
@@ -195,22 +202,11 @@ function ImageUpload({ onImageUpload, existingImage }) {
                                         color: '#0E1328',
                                         textAlign: 'center',
                                         fontFamily: 'Lato',
-                                        fontSize: '24px',
+                                        fontSize: '12px',
                                         fontWeight: 600,
                                         lineHeight: '36px',
                                     }}>
                                         JPEG or PNG (Max. size: 2 MB)
-                                    </div>
-                                    <div style={{
-                                        color: 'rgba(14, 19, 40, 0.64)',
-                                        textAlign: 'center',
-                                        fontFamily: 'Lato',
-                                        fontSize: '16px',
-                                        fontWeight: 400,
-                                        lineHeight: '24px',
-                                        marginTop: '8px',
-                                    }}>
-                                        Click to browse or drag and drop
                                     </div>
                                 </div>
                             </div>

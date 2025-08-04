@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import FrontPage from './FrontPage';
 import undo from '../assets/icons/undo.svg';
 import redo from '../assets/icons/redo.svg';
@@ -15,6 +15,123 @@ function RightPanel({ pages, onPageDataUpdate }) {
   const scrollContainerRef = useRef(null);
   const sectionRefs = useRef({});
   const [showPreview, setShowPreview] = useState(false);
+  
+  // History management state
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isUndoRedoAction, setIsUndoRedoAction] = useState(false);
+
+  // Initialize history with current pages state
+  useEffect(() => {
+    if (pages && pages.length > 0 && history.length === 0) {
+      const initialState = JSON.parse(JSON.stringify(pages));
+      setHistory([initialState]);
+      setHistoryIndex(0);
+    }
+  }, [pages, history.length]);
+
+  // Save state to history (called when page data changes)
+  const saveToHistory = useCallback((newPages) => {
+    if (isUndoRedoAction) return; // Don't save during undo/redo operations
+    
+    setHistory(prev => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(JSON.parse(JSON.stringify(newPages)));
+      
+      // Limit history size to prevent memory issues (keep last 50 states)
+      if (newHistory.length > 50) {
+        newHistory.shift();
+        setHistoryIndex(prev => Math.max(0, prev - 1));
+        return newHistory;
+      }
+      
+      setHistoryIndex(newHistory.length - 1);
+      return newHistory;
+    });
+  }, [historyIndex, isUndoRedoAction]);
+
+  // Undo function
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setIsUndoRedoAction(true);
+      
+      // Apply the previous state
+      const previousState = history[newIndex];
+      if (onPageDataUpdate && previousState) {
+        // Update all pages with previous state
+        previousState.forEach(page => {
+          onPageDataUpdate(page.id, page, true); // true flag indicates bulk update
+        });
+      }
+      
+      // Reset the flag after a brief delay
+      setTimeout(() => setIsUndoRedoAction(false), 100);
+    }
+  }, [historyIndex, history, onPageDataUpdate]);
+
+  // Redo function
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setIsUndoRedoAction(true);
+      
+      // Apply the next state
+      const nextState = history[newIndex];
+      if (onPageDataUpdate && nextState) {
+        // Update all pages with next state
+        nextState.forEach(page => {
+          onPageDataUpdate(page.id, page, true); // true flag indicates bulk update
+        });
+      }
+      
+      // Reset the flag after a brief delay
+      setTimeout(() => setIsUndoRedoAction(false), 100);
+    }
+  }, [historyIndex, history, onPageDataUpdate]);
+
+  // Enhanced page data update handler
+  const handlePageDataUpdate = useCallback((pageId, updatedData, isBulkUpdate = false) => {
+    if (onPageDataUpdate) {
+      onPageDataUpdate(pageId, updatedData, isBulkUpdate);
+      
+      // Save to history only if it's not a bulk update (undo/redo)
+      if (!isBulkUpdate && !isUndoRedoAction) {
+        // Get updated pages array and save to history
+        setTimeout(() => {
+          const updatedPages = pages.map(page => 
+            page.id === pageId ? { ...page, ...updatedData } : page
+          );
+          saveToHistory(updatedPages);
+        }, 0);
+      }
+    }
+  }, [onPageDataUpdate, pages, saveToHistory, isUndoRedoAction]);
+
+  // Check if undo/redo is available
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
+  // Add keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault();
+        handleUndo();
+      } else if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
+        event.preventDefault();
+        handleRedo();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleUndo, handleRedo]);
 
   // Create refs for each page dynamically
   useEffect(() => {
@@ -83,7 +200,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
     setShowPreview(false);
   };
 
-  // UPDATED: Page component rendering with dynamic day numbering and correct prop names
+  // Page component rendering with dynamic day numbering and correct prop names
   const renderPageComponent = (page, pageNumber) => {
     const pageStyle = {
       position: 'relative',
@@ -114,21 +231,13 @@ function RightPanel({ pages, onPageDataUpdate }) {
       // ThankYouPage expects onDataChange
       pageProps = {
         ...commonProps,
-        onDataChange: (updatedData) => {
-          if (onPageDataUpdate) {
-            onPageDataUpdate(page.id, updatedData);
-          }
-        }
+        onDataChange: (updatedData) => handlePageDataUpdate(page.id, updatedData)
       };
     } else {
       // Other pages expect onDataUpdate
       pageProps = {
         ...commonProps,
-        onDataUpdate: (updatedData) => {
-          if (onPageDataUpdate) {
-            onPageDataUpdate(page.id, updatedData);
-          }
-        }
+        onDataUpdate: (updatedData) => handlePageDataUpdate(page.id, updatedData)
       };
     }
 
@@ -218,7 +327,15 @@ function RightPanel({ pages, onPageDataUpdate }) {
         >
           {/* Undo/Redo Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={iconWrapper}>
+            <div 
+              style={{
+                ...iconWrapper,
+                opacity: canUndo ? 1 : 0.5,
+                cursor: canUndo ? 'pointer' : 'not-allowed'
+              }}
+              onClick={canUndo ? handleUndo : undefined}
+              title={canUndo ? 'Undo (Ctrl+Z)' : 'Nothing to undo'}
+            >
               <img 
                 src={undo} 
                 alt="undo" 
@@ -226,7 +343,15 @@ function RightPanel({ pages, onPageDataUpdate }) {
                 style={{ userSelect: 'none' }}
               />
             </div>
-            <div style={iconWrapper}>
+            <div 
+              style={{
+                ...iconWrapper,
+                opacity: canRedo ? 1 : 0.5,
+                cursor: canRedo ? 'pointer' : 'not-allowed'
+              }}
+              onClick={canRedo ? handleRedo : undefined}
+              title={canRedo ? 'Redo (Ctrl+Y)' : 'Nothing to redo'}
+            >
               <img 
                 src={redo} 
                 alt="redo" 
@@ -251,7 +376,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
               <div style={divider}></div>
               <div style={label}>Preview</div>
             </div>
-            <div style={downloadButton}>
+            {/* <div style={downloadButton}>
               <img 
                 style={icon} 
                 src={download} 
@@ -260,7 +385,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
               />
               <div style={dividerWhite}></div>
               <div style={labelWhite}>Download</div>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -505,17 +630,16 @@ const frontPageWrapper = {
   position: 'relative',
 };
 
-// FIXED: Changed minHeight to height and added overflow hidden for fixed size
 const dayPageWrapper = {
   display: 'flex',
   width: '1088px',
-  height: '1540px', // Changed from minHeight to height for fixed size
+  height: '1540px',
   flexDirection: 'column',
   justifyContent: 'flex-start',
   alignItems: 'center',
   flexShrink: 0,
   position: 'relative',
-  overflow: 'hidden', // Prevent content from extending beyond fixed dimensions
+  overflow: 'hidden',
 };
 
 export default RightPanel;

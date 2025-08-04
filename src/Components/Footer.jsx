@@ -87,7 +87,7 @@ function Footer({ pageNumber = 1 }) {
           >
             <div
               style={{
-                color: 'rgba(255, 255, 255, 0.42)',
+                color: '#FFF',
                 fontFamily: 'Lato',
                 fontSize: '14px',
                 fontStyle: 'normal',
@@ -110,7 +110,7 @@ function Footer({ pageNumber = 1 }) {
 
             <div
               style={{
-                color: 'rgba(255, 255, 255, 0.42)',
+                color: '#FFF',
                 fontFamily: 'Lato',
                 fontSize: '14px',
                 fontStyle: 'normal',
@@ -124,7 +124,7 @@ function Footer({ pageNumber = 1 }) {
 
             <div
               style={{
-                color: '#FFF',
+                color: 'rgba(255, 255, 255, 0.42)',
                 fontFamily: 'Lato',
                 fontSize: '16px',
                 fontStyle: 'normal',
@@ -133,7 +133,7 @@ function Footer({ pageNumber = 1 }) {
                 userSelect: 'none',
               }}
             >
-              PAGE {String(pageNumber).padStart(2, '0')}
+              Page {String(pageNumber).padStart(2, '0')}
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import close from '../assets/icons/close.svg'
 import hotel from '../assets/icons/hotel.svg'
 import fork_spoon from '../assets/icons/fork_spoon.svg'
 import table from '../assets/icons/table.svg'
-
+import drag_indicator from '../assets/icons/drag_indicator.svg'
 import flightland from '../assets/icons/flight_land.svg'
 import interest from '../assets/icons/interests.svg'
 import taxi from '../assets/icons/local_taxi.svg'
@@ -65,6 +65,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
     });
 
     const [openDropdownIndex, setOpenDropdownIndex] = useState(null);
+    const [activeActivityIndex, setActiveActivityIndex] = useState(null);
     const dropdownRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -138,6 +139,14 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
         const newActivities = [...localData.activityDetails];
         newActivities[index] = value;
         updateParent({ activityDetails: newActivities });
+    };
+
+    const handleActivityFocus = (index) => {
+        setActiveActivityIndex(index);
+    };
+
+    const handleActivityBlur = () => {
+        setActiveActivityIndex(null);
     };
 
     const handleMealToggle = (meal) => {
@@ -220,7 +229,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                 {SECTION_OPTIONS.map((opt) => (
                     <div key={opt.value} onClick={() => handleIconChange(key, opt.value, opt.heading)} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', cursor: 'pointer', borderBottom: '1px solid #eee', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }} onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'} onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'} onDragStart={e => e.preventDefault()}>
                         <img src={ICON_OPTIONS[opt.value]} alt={opt.label} width={16} height={16} draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
-                        <span style={{ fontSize: '14px', color: '#333', userSelect: 'none' }}>{opt.label}</span>
+                        <span style={{ fontFamily: 'Lato' ,fontSize: '14px', color: '#333', userSelect: 'none' }}>{opt.label}</span>
                     </div>
                 ))}
             </div>
@@ -249,7 +258,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 id={getUniqueId('dynamic_section_heading', section.id)}
                                 name={getUniqueId('dynamic_section_heading', section.id)}
                                 onChange={(e) => handleDynamicSectionChange(section.id, 'heading', e.target.value)}
-                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
+                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
@@ -295,13 +304,39 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                     <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1', userSelect: 'none' }}>
                         <img src={ICON_OPTIONS[localData.icons[sectionKey]]} alt={sectionKey} draggable={false} onDragStart={e => e.preventDefault()} style={{ userSelect: 'none', pointerEvents: 'none' }} />
                     </div>
+                    {/* Drag indicator - positioned below the icon when activity is active */}
+                    {sectionKey === 'activity' && activeActivityIndex !== null && !isPreview && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '48px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            display: 'flex',
+                            padding: '8px 16px',
+                            alignItems: 'center',
+                            alignSelf: 'stretch',
+                            borderRadius: '12px',
+                            background: 'rgba(14, 19, 40, 0.06)',
+                            zIndex: 10
+                        }}>
+                            <img 
+                                src={drag_indicator} 
+                                alt="drag indicator" 
+                                width={20} 
+                                height={20} 
+                                draggable={false} 
+                                onDragStart={e => e.preventDefault()} 
+                                style={{ userSelect: 'none', pointerEvents: 'none' }} 
+                            />
+                        </div>
+                    )}
                     {renderDropdown(sectionKey, dropdownIndex)}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', flex: '1 0 0' }}>
                     <div style={{ display: 'flex', padding: '0 0 4px 16px', justifyContent: 'center', alignItems: 'center', gap: '10px', alignSelf: 'stretch' }}>
                         {isPreview ? (
-                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
+                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
                                 {localData.sectionHeadings[sectionKey]}
                             </div>
                         ) : (
@@ -311,7 +346,7 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                 name={getUniqueId(`${sectionKey}_heading`)}
                                 value={localData.sectionHeadings[sectionKey]}
                                 onChange={(e) => handleSectionHeadingChange(sectionKey, e.target.value)}
-                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Inter', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
+                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
@@ -526,6 +561,8 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
                                                 name={getUniqueId('activity', index)}
                                                 value={activity}
                                                 onChange={(e) => handleActivityChange(index, e.target.value)}
+                                                onFocus={() => handleActivityFocus(index)}
+                                                onBlur={handleActivityBlur}
                                                 placeholder="Enter activity details"
                                                 style={{ color: activity ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '28px', fontStyle: 'normal', fontWeight: 400, lineHeight: '36px', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                                             />

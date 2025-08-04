@@ -161,21 +161,27 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
         },
         adultsCounterText: {
             color: localData.adults === 0 ? "rgba(242, 244, 254, 0.12)" : "#FFFFFF",
-            fontSize: "28px",
+            fontSize: isPreview ? "35px" : "28px",
             width: isPreview ? "auto" : "64px",
-            textAlign: isPreview ? "left" : "center",
+            textAlign: isPreview ? "center" : "center",
             fontFamily: 'Lato',
             fontWeight: 400,
             lineHeight: '36px',
         },
         childrenCounterText: {
             color: localData.children === 0 ? "rgba(242, 244, 254, 0.12)" : "#FFFFFF",
-            fontSize: "28px",
+            fontSize: isPreview ? "35px" : "28px",
             width: isPreview ? "auto" : "64px",
-            textAlign: isPreview ? "left" : "center",
+            textAlign: isPreview ? "center" : "center",
             fontFamily: 'Lato',
             fontWeight: 400,
             lineHeight: '36px',
+        },
+        divider: {
+            width: '1px',
+            height: '24px',
+            borderRadius: '2px',
+            background: 'rgba(255, 255, 255, 0.16)',
         }
     }), [localData.backgroundImage, localData.adults, localData.children, isPreview]);
 
@@ -417,9 +423,15 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                                 <img src={dnd} alt="minus" width={32} height={32} />
                             </div>
                         )}
+                        
+                        {!isPreview && <div style={styles.divider} />}
+                        
                         <div style={styles.adultsCounterText}>
                             {localData.adults}
                         </div>
+                        
+                        {!isPreview && <div style={styles.divider} />}
+                        
                         {!isPreview && (
                             <div
                                 id={uniqueIds.adultsPlusBtn}
@@ -459,9 +471,15 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                                 <img src={dnd} alt="minus" width={32} height={32} />
                             </div>
                         )}
+                        
+                        {!isPreview && <div style={styles.divider} />}
+                        
                         <div style={styles.childrenCounterText}>
                             {localData.children}
                         </div>
+                        
+                        {!isPreview && <div style={styles.divider} />}
+                        
                         {!isPreview && (
                             <div
                                 id={uniqueIds.childrenPlusBtn}
@@ -486,7 +504,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     marginBottom: "20px",
                 }}>
                     <div style={{
-                        color: "#9D0D0F99",
+                        color: "#C46E6F",
                         fontFamily: "Lato",
                         fontSize: "24px",
                         fontStyle: "normal",

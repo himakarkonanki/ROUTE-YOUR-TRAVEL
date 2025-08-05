@@ -20,6 +20,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isUndoRedoAction, setIsUndoRedoAction] = useState(false);
+  const historyIndexRef = useRef(-1);
 
   // Initialize history with current pages state
   useEffect(() => {
@@ -27,8 +28,14 @@ function RightPanel({ pages, onPageDataUpdate }) {
       const initialState = JSON.parse(JSON.stringify(pages));
       setHistory([initialState]);
       setHistoryIndex(0);
+      historyIndexRef.current = 0;
     }
   }, [pages, history.length]);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    historyIndexRef.current = historyIndex;
+  }, [historyIndex]);
 
   // Save state to history (called when page data changes)
   const saveToHistory = useCallback((newPages) => {
@@ -99,16 +106,37 @@ function RightPanel({ pages, onPageDataUpdate }) {
       
       // Save to history only if it's not a bulk update (undo/redo)
       if (!isBulkUpdate && !isUndoRedoAction) {
-        // Get updated pages array and save to history
-        setTimeout(() => {
-          const updatedPages = pages.map(page => 
-            page.id === pageId ? { ...page, ...updatedData } : page
-          );
-          saveToHistory(updatedPages);
-        }, 0);
+        // Use current pages prop directly to get the most up-to-date state
+        const updatedPages = pages.map(page => {
+          if (page.id === pageId) {
+            return { ...page, ...updatedData };
+          }
+          return page;
+        });
+        
+        // Save to history immediately without setTimeout
+        setHistory(prev => {
+          const currentIndex = historyIndexRef.current;
+          const newHistory = prev.slice(0, currentIndex + 1);
+          newHistory.push(JSON.parse(JSON.stringify(updatedPages)));
+          
+          // Limit history size
+          if (newHistory.length > 50) {
+            newHistory.shift();
+            const nextIndex = Math.max(0, newHistory.length - 1);
+            setHistoryIndex(nextIndex);
+            historyIndexRef.current = nextIndex;
+            return newHistory;
+          }
+          
+          const nextIndex = newHistory.length - 1;
+          setHistoryIndex(nextIndex);
+          historyIndexRef.current = nextIndex;
+          return newHistory;
+        });
       }
     }
-  }, [onPageDataUpdate, pages, saveToHistory, isUndoRedoAction]);
+  }, [onPageDataUpdate, pages, isUndoRedoAction]);
 
   // Check if undo/redo is available
   const canUndo = historyIndex > 0;

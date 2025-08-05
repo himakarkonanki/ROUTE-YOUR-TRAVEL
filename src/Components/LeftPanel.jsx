@@ -26,9 +26,10 @@ import more_vertical from '../assets/icons/more_vert.svg'
 import EditorBarForLeftPanel from './EditorBarForLeftPanel'
 import DuplicatePageTray from './DuplicatePageTray'
 import ThumbnailGenerator from './ThumbnailGenerator'
+import ThankYouImage from '../assets/icons/Thankthumbnail.svg';
 
 // Sortable Item Component
-function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuClick, showPageMenu, pageMenuRef, handleDuplicate, handleDelete }) {
+function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuClick, showPageMenu, pageMenuRef, handleDuplicate, handleDelete, pages, PageThumbnail }) {
   const {
     attributes,
     listeners,
@@ -57,23 +58,7 @@ function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuCli
     transition: 'all 0.2s ease-in-out',
   })
 
-  const PageThumbnail = ({ pageType, pageId }) => (
-    <div
-      style={{
-        width: '40px',
-        height: '40px',
-        aspectRatio: '1 / 1',
-        borderRadius: '8px',
-        border: '2px solid rgba(255, 255, 255, 0.1)',
-        background: '#fff',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      }}
-    >
-      <ThumbnailGenerator pageType={pageType} />
-    </div>
-  )
+  // ...existing code...
 
   return (
     <div
@@ -185,6 +170,49 @@ function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuCli
 }
 
 function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderPages }) {
+  // Component to render thumbnail (now in main scope)
+  const PageThumbnail = ({ pageType, pageId }) => {
+    const page = pages.find(p => p.id === pageId);
+    if (pageType === 'thankyou') {
+      // Only render the SVG/PNG used at the bottom of the Thank You page, with dark blue background
+      return (
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '8px',
+            border: '2px solid rgba(255, 255, 255, 0.1)',
+            background: 'linear-gradient(199deg, rgba(139, 35, 243, 0.08) 25.35%, rgba(139, 35, 243, 0.08) 50.01%, rgba(243, 63, 63, 0.08) 74.65%), #0E1328',
+            overflow: 'hidden',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          <img src={ThankYouImage} alt="Thank You" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+        </div>
+      );
+    }
+    // Default: render the full page preview
+    return (
+      <div
+        style={{
+          width: '40px',
+          height: '40px',
+          aspectRatio: '200 / 280',
+          borderRadius: '8px',
+          border: '2px solid rgba(255, 255, 255, 0.1)',
+          background: '#fff',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        }}
+      >
+        <ThumbnailGenerator page={page} />
+      </div>
+    );
+  }
   const [hoveredItem, setHoveredItem] = useState(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [showPageMenu, setShowPageMenu] = useState(null)
@@ -292,58 +320,43 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
     setShowPageMenu(null)
   }
 
-  // Component to render thumbnail
-  const PageThumbnail = ({ pageType, pageId }) => (
-    <div
-      style={{
-        width: '40px',
-        height: '40px',
-        aspectRatio: '1 / 1',
-        borderRadius: '8px',
-        border: '2px solid rgba(255, 255, 255, 0.1)',
-        background: '#fff',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      }}
-    >
-      <ThumbnailGenerator pageType={pageType} />
-    </div>
-  )
+  // ...existing code...
 
   // Render static page item (for cover and thank you pages)
-  const renderStaticPageItem = (pageType, title, hoverId) => (
-    <div
-      style={getPageItemStyle(hoveredItem === hoverId)}
-      onMouseEnter={() => setHoveredItem(hoverId)}
-      onMouseLeave={() => setHoveredItem(null)}
-    >
-      <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1' }}>
-        <img src={drag_indicator} alt='drag-indicator' style={{ opacity: 0.3 }} />
-      </div>
-      
-      <PageThumbnail pageType={pageType} />
-      
-      <div style={{
-        display: 'flex',
-        padding: '0 8px',
-        alignItems: 'center',
-        flex: '1 0 0',
-      }}>
+  const renderStaticPageItem = (pageType, title, hoverId) => {
+    // Find the correct pageId for the given type
+    const page = pages.find(p => p.type === pageType);
+    return (
+      <div
+        style={getPageItemStyle(hoveredItem === hoverId)}
+        onMouseEnter={() => setHoveredItem(hoverId)}
+        onMouseLeave={() => setHoveredItem(null)}
+      >
+        <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1' }}>
+          <img src={drag_indicator} alt='drag-indicator' style={{ opacity: 0.3 }} />
+        </div>
+        <PageThumbnail pageType={pageType} pageId={page ? page.id : undefined} />
         <div style={{
+          display: 'flex',
+          padding: '0 8px',
+          alignItems: 'center',
           flex: '1 0 0',
-          color: '#FFF',
-          fontFamily: 'Lato',
-          fontSize: '14px',
-          fontStyle: 'normal',
-          fontWeight: 600,
-          lineHeight: '20px',
         }}>
-          {title}
+          <div style={{
+            flex: '1 0 0',
+            color: '#FFF',
+            fontFamily: 'Lato',
+            fontSize: '14px',
+            fontStyle: 'normal',
+            fontWeight: 600,
+            lineHeight: '20px',
+          }}>
+            {title}
+          </div>
         </div>
       </div>
-    </div>
-  )
+    );
+  }
 
   // Get reorderable pages and their IDs for the sortable context
   const reorderablePages = pages.filter(page => page.type === 'day' || page.type === 'policy')
@@ -520,6 +533,8 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
                     pageMenuRef={pageMenuRef}
                     handleDuplicate={handleDuplicate}
                     handleDelete={handleDelete}
+                    pages={pages}
+                    PageThumbnail={PageThumbnail}
                   />
                 ))}
               </div>

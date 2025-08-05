@@ -1,42 +1,30 @@
-// ThumbnailGenerator.jsx
 import React from 'react';
-import FrontPage from './FrontPage';
-import DayPage from './DayPage';
-import ThankYouPage from './ThankYouPage';
-import PolicyPage from './PolicyPage';
+import PagePreview from './PagePreview';
 
-function ThumbnailGenerator({ pageType, style }) {
-  const renderPageContent = () => {
-    switch (pageType) {
-      case 'cover':
-        return <FrontPage />;
-      case 'day':
-        return <DayPage />;
-      case 'policy':
-        return <PolicyPage />;
-      case 'thankyou':
-        return <ThankYouPage />;
-      default:
-        return <div>Unknown page type</div>;
-    }
-  };
-
+// Renders a scaled-down live preview of the page
+function ThumbnailGenerator({ page }) {
   return (
-    <div
-      style={{
-        ...style,
-        transform: 'scale(0.37)', // Scale down to fit thumbnail size (1088px -> ~28px)
+    <div style={{
+      width: '200px',
+      height: '200px',
+      overflow: 'hidden',
+      background: '#fff',
+      borderRadius: 8,
+      position: 'relative',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+    }}>
+      <div style={{
+        width: '288px', // virtual page width
+        height: '100px', // virtual page height
+        transform: 'scale(0.2)', // scale down to fit 40x56px
         transformOrigin: 'top left',
-        width: '1088px',
-        height: '1540px',
+        pointerEvents: 'none',
         position: 'absolute',
         top: 0,
         left: 0,
-        pointerEvents: 'none',
-        overflow: 'hidden',
-      }}
-    >
-      {renderPageContent()}
+      }}>
+        <PagePreview page={page} />
+      </div>
     </div>
   );
 }

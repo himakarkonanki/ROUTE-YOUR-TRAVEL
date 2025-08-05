@@ -163,30 +163,21 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
     // Helper function to calculate total content fields for responsive image height
     const getTotalContentHeight = () => {
         let totalFields = 0;
-        
-        // Count fields in default sections (only visible ones)
         if (localData.visibleSections.arrival) totalFields += localData.arrivalDetails.length;
         if (localData.visibleSections.transfer) totalFields += localData.transferDetails.length;
         if (localData.visibleSections.activity) totalFields += localData.activityDetails.length;
         if (localData.visibleSections.drop) totalFields += localData.dropDetails.length;
-        
-        // Count fields in dynamic sections
         localData.dynamicSections.forEach(section => {
             totalFields += Array.isArray(section.details) ? section.details.length : 1;
         });
-        
-        // Calculate base sections (visible main sections + dynamic sections)
         const visibleMainSections = Object.values(localData.visibleSections).filter(Boolean).length;
         const totalSections = visibleMainSections + localData.dynamicSections.length;
         const baseFields = totalSections; // One field per section as baseline
-        
         // Each additional field beyond the base reduces height by 20px
         const extraFields = Math.max(0, totalFields - baseFields);
-        
         // Each additional section beyond 4 also reduces height by 30px
         const extraSections = Math.max(0, totalSections - 4);
         const sectionReduction = extraSections * 30;
-        
         return extraFields * 20 + sectionReduction;
     };
 
@@ -217,14 +208,26 @@ function DayPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpdate
         const currentSectionLength = sectionId 
             ? localData.dynamicSections.find(s => s.id === sectionId)?.details?.length || 0
             : localData[`${sectionKey}Details`]?.length || 0;
-
         // Allow each section up to 5 fields maximum
-        return currentSectionLength < 5;
+        return currentSectionLength < 5 && getTotalFields() < 20;
     };
 
-    // Helper function to calculate approximate content height
+// Helper function to calculate total number of fields (subsections) across all sections
+const getTotalFields = () => {
+    let total = 0;
+    if (localData.visibleSections.arrival) total += localData.arrivalDetails.length;
+    if (localData.visibleSections.transfer) total += localData.transferDetails.length;
+    if (localData.visibleSections.activity) total += localData.activityDetails.length;
+    if (localData.visibleSections.drop) total += localData.dropDetails.length;
+    localData.dynamicSections.forEach(section => {
+        total += Array.isArray(section.details) ? section.details.length : 1;
+    });
+    return total;
+};
+
+// Helper function to calculate approximate content height
 const calculateContentHeight = () => {
-    // Base heights
+    // ...existing code...
     const responsiveReduction = getTotalContentHeight();
     const imageHeight = Math.max(284, 584 - responsiveReduction);
     const titleSectionHeight = 160;
@@ -249,13 +252,29 @@ const calculateContentHeight = () => {
     return imageHeight + titleSectionHeight + (4 * sectionBaseHeight) + totalFieldHeight + dynamicSectionHeight + spacing + padding;
 };
 
+// Helper to count total number of sections (main + dynamic, visible only)
+const getTotalSections = () => {
+    let count = 0;
+    if (localData.visibleSections.arrival) count++;
+    if (localData.visibleSections.transfer) count++;
+    if (localData.visibleSections.activity) count++;
+    if (localData.visibleSections.drop) count++;
+    count += localData.dynamicSections.length;
+    return count;
+};
+
 const canAddMoreContent = () => {
     const maxAllowedHeight = 1480; // Allow more content before hitting the footer
     const currentHeight = calculateContentHeight();
     const minimumGapFromFooter = 24; // Match the new padding
     const estimatedNewContentHeight = 36; // Slightly less for more flexibility
     const totalHeightWithNewContent = currentHeight + estimatedNewContentHeight;
-    return totalHeightWithNewContent <= (maxAllowedHeight - minimumGapFromFooter);
+    // Enforce both field and section limits
+    return (
+        totalHeightWithNewContent <= (maxAllowedHeight - minimumGapFromFooter)
+        && getTotalFields() < 20
+        && getTotalSections() < 5
+    );
 };
 
     // Handle sub-field changes
@@ -444,35 +463,27 @@ const canAddMoreContent = () => {
     };
 
     const handleAddSection = (newSection) => {
-        // Maximum 2 dynamic sections allowed
-        const maxSections = 2;
-        const hasSpace = canAddMoreContent();
-        
-        console.log('handleAddSection called:', {
-            currentSections: localData.dynamicSections.length,
-            maxSections,
-            hasSpace,
-            newSection
-        });
-        
-        // Check both section limit and available space
-        if (localData.dynamicSections.length >= maxSections) {
+        // Enforce a maximum of 5 total sections (main + dynamic)
+        if (getTotalSections() >= 5) {
             console.log('Section limit reached');
             return;
         }
-        
+        // Enforce a maximum of 20 total fields
+        if (getTotalFields() >= 20) {
+            console.log('Field limit reached');
+            return;
+        }
+        const hasSpace = canAddMoreContent();
         if (!hasSpace) {
             console.log('No space available');
             return;
         }
-        
         // Ensure details is an array with exactly one field
         const sectionWithArrayDetails = {
             ...newSection,
             details: [''] // Always start with a single empty field
         };
         const updatedSections = [...localData.dynamicSections, sectionWithArrayDetails];
-        console.log('Adding section:', sectionWithArrayDetails);
         updateParent({ dynamicSections: updatedSections });
     };
 
@@ -587,7 +598,7 @@ const canAddMoreContent = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', flex: '1 0 0' }}>
                     <div style={{ display: 'flex', padding: '0 0 4px 16px', justifyContent: 'center', alignItems: 'center', gap: '10px', alignSelf: 'stretch' }}>
                         {isPreview ? (
-                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
+                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
                                 {section.heading}
                             </div>
                         ) : (
@@ -597,7 +608,7 @@ const canAddMoreContent = () => {
                                 id={getUniqueId('dynamic_section_heading', section.id)}
                                 name={getUniqueId('dynamic_section_heading', section.id)}
                                 onChange={(e) => handleDynamicSectionChange(section.id, 'heading', e.target.value)}
-                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
+                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
@@ -605,12 +616,14 @@ const canAddMoreContent = () => {
                     <div style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'flex-start', flexDirection: 'column', alignSelf: 'stretch' }}>
                         {Array.isArray(section.details) ? (
                             section.details.map((detail, detailIndex) => (
-                                <div key={detailIndex} style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch', marginBottom: detailIndex < section.details.length - 1 ? '0px' : '0px' }}>
-                                    {isPreview ? (
-                                        <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
-                                            {detail || `No ${section.heading.toLowerCase()} details`}
+                                isPreview ? (
+                                    detail ? (
+                                        <div key={detailIndex} style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch', marginBottom: detailIndex < section.details.length - 1 ? '0px' : '0px', color: '#0E1328', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                            {detail}
                                         </div>
-                                    ) : (
+                                    ) : null
+                                ) : (
+                                    <div key={detailIndex} style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch', marginBottom: detailIndex < section.details.length - 1 ? '0px' : '0px' }}>
                                         <input
                                             type="text"
                                             value={detail}
@@ -619,19 +632,21 @@ const canAddMoreContent = () => {
                                             onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value, detailIndex)}
                                             onKeyDown={(e) => handleDynamicSectionKeyPress(e, section.id, detailIndex)}
                                             placeholder={`Enter ${section.heading.toLowerCase()} details`}
-                                            style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                            style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
                                         />
-                                    )}
-                                </div>
+                                    </div>
+                                )
                             ))
                         ) : (
                             // Fallback for old format - single detail field
-                            <div style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch' }}>
-                                {isPreview ? (
-                                    <div style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
-                                        {section.details || `No ${section.heading.toLowerCase()} details`}
+                            isPreview ? (
+                                section.details ? (
+                                    <div style={{ color: '#0E1328', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                        {section.details}
                                     </div>
-                                ) : (
+                                ) : null
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', alignSelf: 'stretch' }}>
                                     <input
                                         type="text"
                                         value={section.details}
@@ -640,10 +655,10 @@ const canAddMoreContent = () => {
                                         onChange={(e) => handleDynamicSectionChange(section.id, 'details', e.target.value)}
                                         onKeyDown={(e) => handleDynamicSectionKeyPress(e, section.id, 0)}
                                         placeholder={`Enter ${section.heading.toLowerCase()} details`}
-                                        style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                        style={{ color: section.details ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
                                     />
-                                )}
-                            </div>
+                                </div>
+                            )
                         )}
                     </div>
                 </div>
@@ -676,7 +691,7 @@ const canAddMoreContent = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', flex: '1 0 0' }}>
                     <div style={{ display: 'flex', padding: '0 0 4px 16px', justifyContent: 'center', alignItems: 'center', gap: '10px', alignSelf: 'stretch' }}>
                         {isPreview ? (
-                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
+                            <div style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0' }}>
                                 {localData.sectionHeadings[sectionKey]}
                             </div>
                         ) : (
@@ -686,7 +701,7 @@ const canAddMoreContent = () => {
                                 name={getUniqueId(`${sectionKey}_heading`)}
                                 value={localData.sectionHeadings[sectionKey]}
                                 onChange={(e) => handleSectionHeadingChange(sectionKey, e.target.value)}
-                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
+                                style={{ color: 'rgba(14, 19, 40, 0.64)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 500, lineHeight: '32px', textTransform: 'uppercase', flex: '1 0 0', border: 'none', outline: 'none', background: 'transparent' }}
                             />
                         )}
                     </div>
@@ -705,6 +720,28 @@ const canAddMoreContent = () => {
 
     return (
         <div style={{ display: 'flex', width: '1088px', height: '1540px', flexDirection: 'column', backgroundColor: '#fff', position: 'relative', overflow: 'hidden' }}>
+            {/* Hidden file input for both initial upload and changing image */}
+            {!isPreview && (
+                <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={e => {
+                        const file = e.target.files && e.target.files[0];
+                        if (!file) return;
+                        if (file.size > 2 * 1024 * 1024) {
+                            alert("File size exceeds 2MB limit.");
+                            return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            handleImageUpload(file, reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                    }}
+                />
+            )}
             {/* Main Content Area */}
             <div style={{ display: 'flex', width: '100%', padding: '0 64px', flexDirection: 'column', alignItems: 'center', gap: '32px', flex: 1, paddingBottom: '0px' }}>
                 {/* Image Upload Component - Dynamic height based on all content */}
@@ -823,7 +860,7 @@ const canAddMoreContent = () => {
                                                 padding: '8px 16px',
                                                 borderRadius: '999px',
                                                 gap: '8px',
-                                                backgroundColor: isPreview ? 'transparent' : (selected ? '#FFFFFF' : '#F4F4F6'),
+                                                backgroundColor: '#F4F4F6', // Always light grey
                                                 border: '1px solid transparent',
                                                 cursor: isPreview ? 'default' : 'pointer',
                                                 boxShadow: (selected && !isPreview) ? '0 0 0 1px rgba(0,0,0,0.04)' : 'none',
@@ -860,11 +897,13 @@ const canAddMoreContent = () => {
                             <div>
                                 {localData.arrivalDetails.map((detail, index) => (
                                     <div key={index} style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
-                                        {isPreview ? (
-                                            <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
-                                                {detail || 'No arrival details'}
+                                    {isPreview ? (
+                                        detail ? (
+                                            <div style={{ color: '#0E1328', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                                {detail}
                                             </div>
-                                        ) : (
+                                        ) : null
+                                    ) : (
                                             <input
                                                 type="text"
                                                 id={getUniqueId('arrival_details', index)}
@@ -873,7 +912,7 @@ const canAddMoreContent = () => {
                                                 onChange={(e) => handleSubFieldChange('arrival', index, e.target.value)}
                                                 onKeyDown={(e) => handleSubFieldKeyPress(e, 'arrival', index)}
                                                 placeholder="Enter the arrival details"
-                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
                                             />
                                         )}
                                     </div>
@@ -886,11 +925,13 @@ const canAddMoreContent = () => {
                             <div>
                                 {localData.transferDetails.map((detail, index) => (
                                     <div key={index} style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
-                                        {isPreview ? (
-                                            <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
-                                                {detail || 'No transfer details'}
+                                    {isPreview ? (
+                                        detail ? (
+                                            <div style={{ color: '#0E1328', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                                {detail}
                                             </div>
-                                        ) : (
+                                        ) : null
+                                    ) : (
                                             <input
                                                 type="text"
                                                 id={getUniqueId('transfer_details', index)}
@@ -899,7 +940,7 @@ const canAddMoreContent = () => {
                                                 onChange={(e) => handleSubFieldChange('transfer', index, e.target.value)}
                                                 onKeyDown={(e) => handleSubFieldKeyPress(e, 'transfer', index)}
                                                 placeholder="Enter the transfer details"
-                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
                                             />
                                         )}
                                     </div>
@@ -912,11 +953,13 @@ const canAddMoreContent = () => {
                             <div>
                                 {localData.activityDetails.map((detail, index) => (
                                     <div key={index} style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
-                                        {isPreview ? (
-                                            <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
-                                                {detail || 'No activity details'}
+                                    {isPreview ? (
+                                        detail ? (
+                                            <div style={{ color: '#0E1328', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                                {detail}
                                             </div>
-                                        ) : (
+                                        ) : null
+                                    ) : (
                                             <input
                                                 type="text"
                                                 id={getUniqueId('activity_details', index)}
@@ -925,7 +968,7 @@ const canAddMoreContent = () => {
                                                 onChange={(e) => handleSubFieldChange('activity', index, e.target.value)}
                                                 onKeyDown={(e) => handleActivityKeyPress(e, index)} // Special handler for activities
                                                 placeholder="Enter the activity details"
-                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
                                             />
                                         )}
                                     </div>
@@ -938,11 +981,13 @@ const canAddMoreContent = () => {
                             <div>
                                 {localData.dropDetails.map((detail, index) => (
                                     <div key={index} style={{ display: 'flex', padding: '0px 0px 0px 16px', alignItems: 'center', alignSelf: 'stretch' }}>
-                                        {isPreview ? (
-                                            <div style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
-                                                {detail || 'No drop details'}
+                                    {isPreview ? (
+                                        detail ? (
+                                            <div style={{ color: '#0E1328', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', flex: '1 0 0' }}>
+                                                {detail}
                                             </div>
-                                        ) : (
+                                        ) : null
+                                    ) : (
                                             <input
                                                 type="text"
                                                 id={getUniqueId('drop_details', index)}
@@ -951,7 +996,7 @@ const canAddMoreContent = () => {
                                                 onChange={(e) => handleSubFieldChange('drop', index, e.target.value)}
                                                 onKeyDown={(e) => handleSubFieldKeyPress(e, 'drop', index)}
                                                 placeholder="Enter the drop details"
-                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '16px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
+                                                style={{ color: detail ? '#0E1328' : 'rgba(14, 19, 40, 0.24)', fontFamily: 'Lato', fontSize: '20px', fontStyle: 'normal', fontWeight: 400, lineHeight: '32px', width: '820px', border: 'none', outline: 'none', background: 'transparent' }}
                                             />
                                         )}
                                     </div>
@@ -963,8 +1008,8 @@ const canAddMoreContent = () => {
                         {localData.dynamicSections.map((section, index) => renderDynamicSection(section, index))}
                     </div>
 
-                    {/* Use the AddSectionTray component - Allow up to 2 dynamic sections */}
-                    {!isPreview && localData.dynamicSections.length < 2 && <AddSectionTray onAddSection={handleAddSection} />}
+                    {/* Use the AddSectionTray component - Allow up to 5 total sections (main + dynamic) and 20 fields */}
+                    {!isPreview && getTotalSections() < 5 && getTotalFields() < 20 && <AddSectionTray onAddSection={handleAddSection} />}
                 </div>
             </div>
 

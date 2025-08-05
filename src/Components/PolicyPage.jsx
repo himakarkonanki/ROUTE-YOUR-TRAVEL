@@ -81,16 +81,6 @@ const IconTray = React.memo(({ onSelectType, onClose }) => {
 
     return (
         <div style={iconTrayStyles.container}>
-            {/* Details Icon */}
-            <div
-                style={iconTrayStyles.iconButton}
-                onClick={() => onSelectType('details')}
-                onMouseEnter={(e) => handleMouseEnter(e)}
-                onMouseLeave={(e) => handleMouseLeave(e)}
-            >
-                <img src={add} alt='details icon' style={iconTrayStyles.icon} />
-            </div>
-
             {/* Title Icon */}
             <div
                 style={iconTrayStyles.iconButton}
@@ -213,7 +203,7 @@ const DetailEditor = React.memo(({
         if (!hasContent && selectedType !== type) {
             onReplace(id, selectedType);
         } else {
-            onAddNew(selectedType);
+            onAddNew(selectedType, id); // Pass current field ID
         }
         
         // Focus handling
@@ -328,7 +318,7 @@ const DetailEditor = React.memo(({
     // Memoized container styles
     const containerStyles = useMemo(() => ({
         display: 'flex',
-        alignItems: type === 'title' ? 'center' : 'flex-start',
+        alignItems: 'center',
         alignSelf: 'stretch',
         marginBottom: type === 'title' ? '24px' : (type === 'table' ? '24px' : '16px'),
         position: 'relative',
@@ -349,7 +339,7 @@ const DetailEditor = React.memo(({
         cursor: 'pointer',
         position: 'absolute',
         left: '-48px',
-        top: type === 'title' ? '50%' : '20px',
+        top: type === 'title' ? '50%' : '5px', // Adjusted top alignment
         transform: type === 'title' ? 'translateY(-50%)' : 'none',
         zIndex: 5,
     }), [type]);
@@ -409,6 +399,7 @@ const DetailEditor = React.memo(({
                     width: '100%',
                     display: 'flex',
                     alignItems: type === 'title' ? 'center' : 'flex-start',
+                    paddingTop: type === 'details' ? '5px' : '0', // Add padding for alignment
                 }}
             >
                 {type === 'title' ? (
@@ -556,28 +547,10 @@ function PolicyPage({ pageId, pageNumber, pageData, isPreview, onDataUpdate }) {
 
     // FIXED: Stable plus icon logic - moved outside of render to prevent blinking
     const fieldsWithPlusIcon = useMemo(() => {
-        return detailFields.map((field, index) => {
-            let showPlusIcon = false;
-
-            // Show plus icon for empty fields
-            if (!field.hasContent) {
-                if (field.type === 'details') {
-                    // For details fields, show plus icon only on the first empty one
-                    const hasEmptyDetailsBefore = detailFields.slice(0, index).some(f => 
-                        f.type === 'details' && !f.hasContent
-                    );
-                    showPlusIcon = !hasEmptyDetailsBefore;
-                } else {
-                    // For other field types (title, table), always show if empty
-                    showPlusIcon = true;
-                }
-            }
-
-            // Always show on first field if empty
-            if (index === 0 && !field.hasContent) {
-                showPlusIcon = true;
-            }
-
+        return detailFields.map((field) => {
+            // Show plus icon for any field that is empty.
+            // This allows adding a new field (like a title or table) in place of any empty line.
+            const showPlusIcon = !field.hasContent;
             return {
                 ...field,
                 showPlusIcon
@@ -585,20 +558,26 @@ function PolicyPage({ pageId, pageNumber, pageData, isPreview, onDataUpdate }) {
         });
     }, [detailFields]);
 
-    const addNewField = useCallback((type = 'details') => {
+    const addNewField = useCallback((type = 'details', afterId = null) => {
         setDetailFields(prevFields => {
-            const newId = Math.max(...prevFields.map(field => field.id)) + 1;
-            
-            if (type === 'title' || type === 'table') {
-                const detailsId = newId + 1;
-                return [
-                    ...prevFields, 
-                    { id: newId, type, hasContent: false, content: '' },
-                    { id: detailsId, type: 'details', hasContent: false, content: '' }
-                ];
-            } else {
-                return [...prevFields, { id: newId, type, hasContent: false, content: '' }];
+            const newId = Math.max(0, ...prevFields.map(field => field.id)) + 1;
+            const newField = { id: newId, type, hasContent: false, content: '' };
+
+            if (afterId !== null) {
+                const afterIndex = prevFields.findIndex(field => field.id === afterId);
+                const newFields = [...prevFields];
+                newFields.splice(afterIndex + 1, 0, newField);
+
+                // If adding a title or table, ensure a details field follows
+                if (type === 'title' || type === 'table') {
+                    const detailsField = { id: newId + 1, type: 'details', hasContent: false, content: '' };
+                    newFields.splice(afterIndex + 2, 0, detailsField);
+                }
+                return newFields;
             }
+
+            // Default behavior if afterId is not provided
+            return [...prevFields, newField];
         });
     }, []);
 
@@ -636,20 +615,30 @@ function PolicyPage({ pageId, pageNumber, pageData, isPreview, onDataUpdate }) {
 
     const handleContentChange = useCallback((fieldId, hasContent, content = '') => {
         setDetailFields(prevFields => {
-            const updatedFields = prevFields.map(field => {
-                if (field.id === fieldId) {
-                    return { ...field, hasContent, content };
-                }
-                return field;
-            });
-            
-            if (hasContent) {
-                const fieldIndex = updatedFields.findIndex(f => f.id === fieldId);
-                const isLastField = fieldIndex === updatedFields.length - 1;
+            const fieldIndex = prevFields.findIndex(f => f.id === fieldId);
+            if (fieldIndex === -1) return prevFields;
+
+            const originalField = prevFields[fieldIndex];
+            const wasEmpty = !originalField.hasContent;
+
+            // Create updated fields array
+            const updatedFields = prevFields.map(field => 
+                field.id === fieldId ? { ...field, hasContent, content } : field
+            );
+
+            // If a field transitions from empty to having content
+            if (wasEmpty && hasContent) {
+                const nextFieldIndex = fieldIndex + 1;
                 
-                if (isLastField) {
-                    const newId = Math.max(...updatedFields.map(field => field.id)) + 1;
-                    updatedFields.push({ 
+                // Check if there's already an empty details field right after
+                const hasEmptyDetailsFieldAfter = nextFieldIndex < updatedFields.length &&
+                                                  updatedFields[nextFieldIndex].type === 'details' &&
+                                                  !updatedFields[nextFieldIndex].hasContent;
+
+                // If not, add one
+                if (!hasEmptyDetailsFieldAfter) {
+                    const newId = Math.max(0, ...updatedFields.map(f => f.id)) + 1;
+                    updatedFields.splice(nextFieldIndex, 0, { 
                         id: newId, 
                         type: 'details', 
                         hasContent: false,

@@ -114,6 +114,7 @@ function ImageUpload({ onImageUpload, existingImage, heightReduction = 0 }) {
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
+                            borderRadius: '32px 32px 0 0',
                         }}
                     />
                 </div>
@@ -186,7 +187,7 @@ function ImageUpload({ onImageUpload, existingImage, heightReduction = 0 }) {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
-                                    gap: '4px',
+                                    gap: '2px',
                                 }}>
                                     <div style={{
                                         color: '#0E1328',
@@ -194,7 +195,7 @@ function ImageUpload({ onImageUpload, existingImage, heightReduction = 0 }) {
                                         fontFamily: 'Lato',
                                         fontSize: '16px',
                                         fontWeight: 600,
-                                        lineHeight: '36px',
+                                        lineHeight: '24px',
                                     }}>
                                         {dragActive ? 'Drop image here' : 'Upload Image'}
                                     </div>
@@ -204,7 +205,7 @@ function ImageUpload({ onImageUpload, existingImage, heightReduction = 0 }) {
                                         fontFamily: 'Lato',
                                         fontSize: '12px',
                                         fontWeight: 600,
-                                        lineHeight: '36px',
+                                        lineHeight: '18px',
                                     }}>
                                         JPEG or PNG (Max. size: 2 MB)
                                     </div>

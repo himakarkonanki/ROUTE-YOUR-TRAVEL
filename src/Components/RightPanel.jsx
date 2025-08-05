@@ -219,6 +219,11 @@ function RightPanel({ pages, onPageDataUpdate }) {
     scrollToSection(nextIndex);
   };
 
+  // Handle wheel events on the entire right panel
+  const handleWheel = useCallback((event) => {
+    // Allow normal scrolling behavior
+  }, []);
+
   // Preview handlers
   const handlePreviewClick = () => {
     setShowPreview(true);
@@ -228,7 +233,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
     setShowPreview(false);
   };
 
-  // Page component rendering with dynamic day numbering and correct prop names
+  // Page component rendering
   const renderPageComponent = (page, pageNumber) => {
     const pageStyle = {
       position: 'relative',
@@ -236,7 +241,6 @@ function RightPanel({ pages, onPageDataUpdate }) {
       height: '100%',
     };
 
-    // Calculate day number ONLY for day pages (independent of page number)
     let dayNumber = 1;
     if (page.type === 'day') {
       const currentPageIndex = pages.findIndex(p => p.id === page.id);
@@ -244,25 +248,21 @@ function RightPanel({ pages, onPageDataUpdate }) {
       dayNumber = dayPagesBefore + 1;
     }
 
-    // Create a unified props object that works for all page types
     const commonProps = {
       pageId: page.id,
-      pageNumber: pageNumber, // This is the DOCUMENT page number (1, 2, 3, 4...)
+      pageNumber: pageNumber,
       pageData: page,
       isPreview: false,
-      ...(page.type === 'day' && { dayNumber }), // This is the DAY number (DAY 1, DAY 2, DAY 3...)
+      ...(page.type === 'day' && { dayNumber }),
     };
 
-    // Add the update handler with the correct prop name based on page type
     let pageProps;
     if (page.type === 'thankyou') {
-      // ThankYouPage expects onDataChange
       pageProps = {
         ...commonProps,
         onDataChange: (updatedData) => handlePageDataUpdate(page.id, updatedData)
       };
     } else {
-      // Other pages expect onDataUpdate
       pageProps = {
         ...commonProps,
         onDataUpdate: (updatedData) => handlePageDataUpdate(page.id, updatedData)
@@ -270,7 +270,6 @@ function RightPanel({ pages, onPageDataUpdate }) {
     }
 
     let pageContent;
-    
     switch (page.type) {
       case 'cover':
         pageContent = <FrontPage {...pageProps} />;
@@ -289,13 +288,11 @@ function RightPanel({ pages, onPageDataUpdate }) {
         break;
     }
 
-    // Show footer for non-cover and non-thankyou pages
     const shouldShowFooter = page.type !== 'cover' && page.type !== 'thankyou';
 
     return (
       <div style={pageStyle}>
         {pageContent}
-        {/* Footer gets the DOCUMENT page number */}
         {shouldShowFooter && <Footer pageNumber={pageNumber} />}
       </div>
     );
@@ -305,7 +302,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
   const getPageTitle = (page) => {
     switch (page.type) {
       case 'cover':
-        return 'COVER PAGE';
+        return 'FRONT PAGE'; // This ensures the cover page gets the correct title
       case 'day':
         return 'DAY PAGE';
       case 'policy':
@@ -319,27 +316,32 @@ function RightPanel({ pages, onPageDataUpdate }) {
 
   return (
     <div
+      ref={scrollContainerRef}
       style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         flex: '1 0 0',
         height: '100vh',
-        overflow: 'hidden',
+        overflow: 'auto',
         position: 'relative',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        WebkitScrollbar: 'none',
       }}
+      onWheel={handleWheel}
     >
       <div
         style={{
           display: 'flex',
           width: '1088px',
-          height: '100vh',
+          minHeight: '100vh',
           flexDirection: 'column',
           borderRadius: '32px 32px 0 0',
-          overflow: 'hidden',
+          overflow: 'visible',
         }}
       >
-        {/* Control Section (Fixed) */}
+        {/* Control Section (Fixed at top) */}
         <div
           style={{
             display: 'flex',
@@ -347,13 +349,17 @@ function RightPanel({ pages, onPageDataUpdate }) {
             justifyContent: 'space-between',
             alignItems: 'center',
             alignSelf: 'stretch',
-            borderRadius: '0 0 32px 32px',
+            borderRadius: '0',
             background: 'rgba(231, 233, 245, 0.92)',
             flexShrink: 0,
             zIndex: 10,
+            position: 'fixed',
+            top: 0,
+            width: '1088px',
+            backdropFilter: 'blur(50px)',
+            WebkitBackdropFilter: 'blur(50px)',
           }}
         >
-          {/* Undo/Redo Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div 
               style={{
@@ -364,12 +370,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
               onClick={canUndo ? handleUndo : undefined}
               title={canUndo ? 'Undo (Ctrl+Z)' : 'Nothing to undo'}
             >
-              <img 
-                src={undo} 
-                alt="undo" 
-                draggable={false}
-                style={{ userSelect: 'none' }}
-              />
+              <img src={undo} alt="undo" draggable={false} style={{ userSelect: 'none' }} />
             </div>
             <div 
               style={{
@@ -380,60 +381,29 @@ function RightPanel({ pages, onPageDataUpdate }) {
               onClick={canRedo ? handleRedo : undefined}
               title={canRedo ? 'Redo (Ctrl+Y)' : 'Nothing to redo'}
             >
-              <img 
-                src={redo} 
-                alt="redo" 
-                draggable={false}
-                style={{ userSelect: 'none' }}
-              />
+              <img src={redo} alt="redo" draggable={false} style={{ userSelect: 'none' }} />
             </div>
           </div>
-
-          {/* Preview + Download Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div 
-              style={{...buttonWrapper, cursor: 'pointer'}}
-              onClick={handlePreviewClick}
-            >
-              <img 
-                style={icon} 
-                src={eye} 
-                alt="visibility" 
-                draggable={false}
-              />
+            <div style={{...buttonWrapper, cursor: 'pointer'}} onClick={handlePreviewClick}>
+              <img style={icon} src={eye} alt="visibility" draggable={false} />
               <div style={divider}></div>
               <div style={label}>Preview</div>
             </div>
-            {/* <div style={downloadButton}>
-              <img 
-                style={icon} 
-                src={download} 
-                alt="download-icon" 
-                draggable={false}
-              />
-              <div style={dividerWhite}></div>
-              <div style={labelWhite}>Download</div>
-            </div> */}
           </div>
         </div>
 
-        {/* Scrollable Content Area with Dynamic Pages */}
+        {/* Content Area */}
         <div
-          ref={scrollContainerRef}
           style={{
-            flex: 1,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            WebkitScrollbar: 'none',
             padding: '32px 0',
+            paddingTop: '80px', // Add padding to avoid content being hidden by the fixed header
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            minHeight: 'calc(100vh - 80px)',
           }}
         >
-          {/* Content Container */}
           <div
             style={{
               width: '1088px',
@@ -443,7 +413,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
               gap: '0px',
             }}
           >
-            {/* Render all pages dynamically with page numbers */}
+            {/* RENDER ALL PAGES DYNAMICALLY */}
             {pages && pages.map((page, index) => (
               <div 
                 key={page.id}
@@ -457,36 +427,19 @@ function RightPanel({ pages, onPageDataUpdate }) {
                   marginBottom: '96px',
                 }}
               >
+                {/* ACTION ROW: Renders for ALL pages, including the Front Page */}
                 <div style={actionRow}>
                   <div style={sectionTitle}>{getPageTitle(page)}</div>
-                  {/* Down arrow - rotated 90deg clockwise to point down */}
-                  <div 
-                    style={{...downArrowIcon, cursor: 'pointer'}}
-                    onClick={navigateDown}
-                  >
-                    <img 
-                      src={forward} 
-                      alt="down" 
-                      draggable={false}
-                      style={{ userSelect: 'none' }}
-                    />
+                  <div style={{...downArrowIcon, cursor: 'pointer'}} onClick={navigateDown}>
+                    <img src={forward} alt="down" draggable={false} style={{ userSelect: 'none' }} />
                   </div>
-                  {/* Up arrow - rotated 270deg (or -90deg) to point up */}
-                  <div 
-                    style={{...upArrowIcon, cursor: 'pointer'}}
-                    onClick={navigateUp}
-                  >
-                    <img 
-                      src={forward} 
-                      alt="up" 
-                      draggable={false}
-                      style={{ userSelect: 'none' }}
-                    />
+                  <div style={{...upArrowIcon, cursor: 'pointer'}} onClick={navigateUp}>
+                    <img src={forward} alt="up" draggable={false} style={{ userSelect: 'none' }} />
                   </div>
                 </div>
 
+                {/* PAGE WRAPPER: Renders the specific page component below the action row */}
                 <div style={page.type === 'cover' ? frontPageWrapper : dayPageWrapper}>
-                  {/* Pass the current page number (index + 1) with complete data */}
                   {renderPageComponent(page, index + 1)}
                 </div>
               </div>
@@ -497,31 +450,17 @@ function RightPanel({ pages, onPageDataUpdate }) {
 
       {/* Preview Overlay */}
       {showPreview && (
-        <PreviewPane 
-          onClose={handleClosePreview}
-          pages={pages}
-        />
+        <PreviewPane onClose={handleClosePreview} pages={pages} />
       )}
 
-      {/* Global CSS with animations */}
+      {/* Global CSS */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          div::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-          }
-          
-          div::-webkit-scrollbar-thumb {
-            background: transparent;
-          }
-          
+          div::-webkit-scrollbar { width: 0px; background: transparent; }
+          div::-webkit-scrollbar-thumb { background: transparent; }
           @keyframes slideUpFromBottom {
-            from {
-              transform: translateY(100%);
-            }
-            to {
-              transform: translateY(0);
-            }
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
           }
         `
       }} />
@@ -529,7 +468,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
   );
 }
 
-// Style objects
+// Style objects remain the same
 const iconWrapper = {
   display: 'flex',
   width: '48px',
@@ -559,22 +498,6 @@ const buttonWrapper = {
   msUserSelect: 'none',
 };
 
-const downloadButton = {
-  display: 'flex',
-  height: '48px',
-  padding: '0 16px',
-  justifyContent: 'center',
-  alignItems: 'center',
-  gap: '8px',
-  borderRadius: '24px',
-  background:
-    'linear-gradient(0deg, rgba(0, 0, 0, 0.30), rgba(0, 0, 0, 0.30)), linear-gradient(89deg, #8B23F3 0%, #F33F3F 92.8%)',
-  userSelect: 'none',
-  WebkitUserSelect: 'none',
-  MozUserSelect: 'none',
-  msUserSelect: 'none',
-};
-
 const icon = {
   width: '24px',
   height: '24px',
@@ -589,13 +512,6 @@ const divider = {
   background: 'rgba(14, 19, 40, 0.08)',
 };
 
-const dividerWhite = {
-  width: '1px',
-  height: '24px',
-  borderRadius: '2px',
-  background: 'rgba(255, 255, 255, 0.16)',
-};
-
 const label = {
   color: '#0E1328',
   fontFamily: 'Lato',
@@ -604,11 +520,6 @@ const label = {
   lineHeight: '20px',
   textTransform: 'uppercase',
   userSelect: 'none',
-};
-
-const labelWhite = {
-  ...label,
-  color: '#FFF',
 };
 
 const actionRow = {
@@ -633,7 +544,7 @@ const sectionTitle = {
 const downArrowIcon = {
   width: '24px',
   height: '24px',
-  transform: 'rotate(360deg)', // Points down
+  transform: 'rotate(360deg)',
   aspectRatio: '1 / 1',
   userSelect: 'none',
 };
@@ -641,7 +552,7 @@ const downArrowIcon = {
 const upArrowIcon = {
   width: '24px',
   height: '24px',
-  transform: 'rotate(180deg)', // Points up
+  transform: 'rotate(180deg)',
   aspectRatio: '1 / 1',
   userSelect: 'none',
 };

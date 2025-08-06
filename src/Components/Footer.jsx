@@ -110,20 +110,6 @@ function Footer({ pageNumber = 1 }) {
 
             <div
               style={{
-                color: '#FFF',
-                fontFamily: 'Lato',
-                fontSize: '14px',
-                fontStyle: 'normal',
-                fontWeight: 400,
-                lineHeight: '20px',
-                userSelect: 'none',
-              }}
-            >
-              (+91) 7305273554
-            </div>
-
-            <div
-              style={{
                 color: 'rgba(255, 255, 255, 0.42)',
                 fontFamily: 'Lato',
                 fontSize: '16px',

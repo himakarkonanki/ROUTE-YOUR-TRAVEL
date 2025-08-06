@@ -119,7 +119,7 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                border: '1px dashed rgba(255, 255, 255, 0.40)',
+                // border: '1px dashed rgba(255, 255, 255, 0.40)',
                 borderRadius: '12px',
                 cursor: 'pointer',
                 position: 'relative',

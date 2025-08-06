@@ -77,8 +77,18 @@ function PolicyPagePreview({ data, pageNumber }) {
                     ];
                 }
 
-                // Debug log to check data structure
-                console.log('Rendering table with content:', tableContent);
+                // Ensure header row exists and is an array
+                if (!Array.isArray(tableContent[0])) {
+                    tableContent[0] = ['', ''];
+                }
+
+                // If header row is shorter than the longest row, pad it
+                const maxCols = Math.max(...tableContent.map(row => Array.isArray(row) ? row.length : 0), 2);
+                tableContent = tableContent.map(row => {
+                    if (!Array.isArray(row)) return Array(maxCols).fill('');
+                    if (row.length < maxCols) return [...row, ...Array(maxCols - row.length).fill('')];
+                    return row;
+                });
 
                 return (
                     <div key={field.id} style={{
@@ -97,27 +107,54 @@ function PolicyPagePreview({ data, pageNumber }) {
                         }}>
                             <thead>
                                 <tr>
-                                    {tableContent[0].map((cell, i) => (
-                                        <th key={i} style={{
-                                            padding: '16px 20px',
-                                            background: '#0E1328',
-                                            color: '#FFF',
-                                            fontSize: '20px',
-                                            fontWeight: 600,
-                                            lineHeight: '28px',
-                                            textAlign: 'left',
-                                        }}>
-                                            {/* Show placeholder if empty */}
-                                            {cell || (
-                                                <span style={{
-                                                    color: 'rgba(255, 255, 255, 0.5)',
-                                                    fontStyle: 'normal'
+                                    {(() => {
+                                        // Check if all header cells are empty
+                                        const allHeaderEmpty = tableContent[0].every(cell => !cell || cell.trim() === '');
+                                        // If all header cells are empty, show a single placeholder in the first cell
+                                        if (allHeaderEmpty) {
+                                            return tableContent[0].map((cell, i) => (
+                                                <th key={i} style={{
+                                                    padding: '16px 20px',
+                                                    background: '#0E1328',
+                                                    color: '#FFF',
+                                                    fontSize: '20px',
+                                                    fontWeight: 600,
+                                                    lineHeight: '28px',
+                                                    textAlign: 'left',
                                                 }}>
-                                                    Table Title
-                                                </span>
-                                            )}
-                                        </th>
-                                    ))}
+                                                    {i === 0 ? (
+                                                        <span style={{
+                                                            color: 'rgba(255, 255, 255, 0.5)',
+                                                            fontStyle: 'normal'
+                                                        }}>
+                                                            Table Title
+                                                        </span>
+                                                    ) : null}
+                                                </th>
+                                            ));
+                                        }
+                                        // Otherwise, show each header cell or placeholder
+                                        return tableContent[0].map((cell, i) => (
+                                            <th key={i} style={{
+                                                padding: '16px 20px',
+                                                background: '#0E1328',
+                                                color: '#FFF',
+                                                fontSize: '20px',
+                                                fontWeight: 600,
+                                                lineHeight: '28px',
+                                                textAlign: 'left',
+                                            }}>
+                                                {cell || (
+                                                    <span style={{
+                                                        color: 'rgba(255, 255, 255, 0.5)',
+                                                        fontStyle: 'normal'
+                                                    }}>
+                                                        Table Title
+                                                    </span>
+                                                )}
+                                            </th>
+                                        ));
+                                    })()}
                                 </tr>
                             </thead>
                             <tbody>
@@ -253,6 +290,10 @@ function PolicyPagePreview({ data, pageNumber }) {
                 .policy-preview-content * {
                     font-family: 'Lato', sans-serif !important;
                     color: #0E1328 !important;
+                }
+                /* Ensure table header text is visible (white) */
+                .policy-preview-content th {
+                    color: #FFF !important;
                 }
             `}</style>
 

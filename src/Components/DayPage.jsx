@@ -287,22 +287,17 @@ const canAddMoreContent = () => {
 
     // Handle Enter key press for general sections (not activities)
     const handleSubFieldKeyPress = (e, sectionKey, index) => {
+        const fieldName = `${sectionKey}Details`;
+        const currentValue = localData[fieldName][index];
         if (e.key === 'Enter') {
             e.preventDefault();
-            const fieldName = `${sectionKey}Details`;
-            const currentValue = localData[fieldName][index];
-
-            // Strict height limit check - this overrides individual section limits
-            const hasSpace = canAddMoreContent();
+            // Always add a new subfield below if current field is not empty and limits are not exceeded
             const canAddToThisSection = canSectionAddField(sectionKey);
-            
-            // Only add new field if current field has content, section can add fields, AND strict height allows
+            const hasSpace = canAddMoreContent();
             if (currentValue && currentValue.trim() && canAddToThisSection && hasSpace) {
                 const newSubFields = [...localData[fieldName]];
-                newSubFields.splice(index + 1, 0, ''); // Add empty field after current one
+                newSubFields.splice(index + 1, 0, '');
                 updateParent({ [fieldName]: newSubFields });
-
-                // Focus on the new field after state update
                 setTimeout(() => {
                     const newFieldId = getUniqueId(`${sectionKey}_details`, index + 1);
                     const newField = document.getElementById(newFieldId);
@@ -310,17 +305,12 @@ const canAddMoreContent = () => {
                 }, 0);
             }
         } else if (e.key === 'Backspace') {
-            const fieldName = `${sectionKey}Details`;
-            const currentValue = localData[fieldName][index];
-
             // Remove empty field if backspace is pressed and it's not the only field
             if (!currentValue && localData[fieldName].length > 1) {
                 e.preventDefault();
                 const newSubFields = [...localData[fieldName]];
                 newSubFields.splice(index, 1);
                 updateParent({ [fieldName]: newSubFields });
-
-                // Focus on previous field
                 setTimeout(() => {
                     const prevIndex = index > 0 ? index - 1 : 0;
                     const prevFieldId = getUniqueId(`${sectionKey}_details`, prevIndex);
@@ -333,21 +323,16 @@ const canAddMoreContent = () => {
 
     // Special handler for activities section
     const handleActivityKeyPress = (e, index) => {
+        const currentValue = localData.activityDetails[index];
         if (e.key === 'Enter') {
             e.preventDefault();
-            const currentValue = localData.activityDetails[index];
-
-            // Strict height limit check - this overrides individual section limits
-            const hasSpace = canAddMoreContent();
+            // Always add a new subfield below if current field is not empty and limits are not exceeded
             const canAddToThisSection = canSectionAddField('activity');
-
-            // Only add new field if current field has content, section can add fields, AND strict height allows
+            const hasSpace = canAddMoreContent();
             if (currentValue && currentValue.trim() && canAddToThisSection && hasSpace) {
                 const newActivityDetails = [...localData.activityDetails];
-                newActivityDetails.splice(index + 1, 0, ''); // Add empty field after current one
+                newActivityDetails.splice(index + 1, 0, '');
                 updateParent({ activityDetails: newActivityDetails });
-
-                // Focus on the new field after state update
                 setTimeout(() => {
                     const newFieldId = getUniqueId('activity_details', index + 1);
                     const newField = document.getElementById(newFieldId);
@@ -355,16 +340,11 @@ const canAddMoreContent = () => {
                 }, 0);
             }
         } else if (e.key === 'Backspace') {
-            const currentValue = localData.activityDetails[index];
-
-            // Only allow deletion if there's more than 1 field and current is empty
             if (!currentValue && localData.activityDetails.length > 1) {
                 e.preventDefault();
                 const newActivityDetails = [...localData.activityDetails];
                 newActivityDetails.splice(index, 1);
                 updateParent({ activityDetails: newActivityDetails });
-
-                // Focus on previous field
                 setTimeout(() => {
                     const prevIndex = index > 0 ? index - 1 : 0;
                     const prevFieldId = getUniqueId('activity_details', prevIndex);
@@ -412,16 +392,13 @@ const canAddMoreContent = () => {
 
     // Handle Enter key press for dynamic sections
     const handleDynamicSectionKeyPress = (e, sectionId, index) => {
+        const section = localData.dynamicSections.find(s => s.id === sectionId);
+        const currentValue = section.details[index];
         if (e.key === 'Enter') {
             e.preventDefault();
-            const section = localData.dynamicSections.find(s => s.id === sectionId);
-            const currentValue = section.details[index];
-
-            // Strict height limit check - this overrides individual section limits
-            const hasSpace = canAddMoreContent();
+            // Always add a new subfield below if current field is not empty and limits are not exceeded
             const canAddToThisSection = canSectionAddField(null, sectionId);
-
-            // Only add new field if current field has content, section can add fields, AND strict height allows
+            const hasSpace = canAddMoreContent();
             if (currentValue && currentValue.trim() && canAddToThisSection && hasSpace) {
                 const updatedSections = localData.dynamicSections.map(sec =>
                     sec.id === sectionId
@@ -429,8 +406,6 @@ const canAddMoreContent = () => {
                         : sec
                 );
                 updateParent({ dynamicSections: updatedSections });
-
-                // Focus on the new field after state update
                 setTimeout(() => {
                     const newFieldId = getUniqueId('dynamic_section_details', `${sectionId}_${index + 1}`);
                     const newField = document.getElementById(newFieldId);
@@ -438,10 +413,6 @@ const canAddMoreContent = () => {
                 }, 0);
             }
         } else if (e.key === 'Backspace') {
-            const section = localData.dynamicSections.find(s => s.id === sectionId);
-            const currentValue = section.details[index];
-
-            // Remove empty field if backspace is pressed and it's not the only field
             if (!currentValue && section.details.length > 1) {
                 e.preventDefault();
                 const updatedSections = localData.dynamicSections.map(sec =>
@@ -450,8 +421,6 @@ const canAddMoreContent = () => {
                         : sec
                 );
                 updateParent({ dynamicSections: updatedSections });
-
-                // Focus on previous field
                 setTimeout(() => {
                     const prevIndex = index > 0 ? index - 1 : 0;
                     const prevFieldId = getUniqueId('dynamic_section_details', `${sectionId}_${prevIndex}`);

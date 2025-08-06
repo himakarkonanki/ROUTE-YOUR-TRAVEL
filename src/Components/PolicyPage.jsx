@@ -92,47 +92,64 @@ const PolicyPage = forwardRef((props, ref) => {
     }
   };
 
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const r = sel.getRangeAt(0);
-    r.deleteContents();
+const handlePaste = (e) => {
+  e.preventDefault();
+  const text = e.clipboardData.getData('text/plain');
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const r = sel.getRangeAt(0);
+  r.deleteContents();
 
-    // For title, just insert plain text without paragraph elements
-    if (e.target === titleRef.current) {
-      const textNode = document.createTextNode(text.replace(/\n/g, ' '));
-      r.insertNode(textNode);
-      r.setStartAfter(textNode);
-      r.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(r);
-      return;
-    }
-
-    // For editor content, keep the original paragraph logic
-    text.split('\n').forEach((line, idx) => {
-      const p = document.createElement('p');
-      p.textContent = line;
-      Object.assign(p.style, {
-        margin: 0,
-        fontSize: '24px',
-        lineHeight: '1.6',
-        fontFamily: 'Lato',
-        color: '#0E1328',
-        textAlign: 'justify',
-      });
-      r.insertNode(p);
-      if (idx < text.split('\n').length - 1) {
-        const br = document.createElement('br');
-        r.insertNode(br);
-      }
-    });
-
+  // For title, just insert plain text without paragraph elements
+  if (e.target === titleRef.current) {
+    const textNode = document.createTextNode(text.replace(/\n/g, ' '));
+    r.insertNode(textNode);
+    r.setStartAfter(textNode);
+    r.collapse(true);
     sel.removeAllRanges();
     sel.addRange(r);
-  };
+    return;
+  }
+
+  // For editor content, preserve exact formatting as copied
+  const lines = text.split('\n');
+  
+  // Insert content exactly as it appears, line by line
+  lines.forEach((line, idx) => {
+    const p = document.createElement('p');
+    
+    // Use textContent to preserve exact text including all spaces and tabs
+    p.textContent = line;
+    
+    Object.assign(p.style, {
+      margin: 0,
+      fontSize: '24px',
+      lineHeight: '1.6',
+      fontFamily: 'Lato',
+      color: '#0E1328',
+      textAlign: 'justify',
+      whiteSpace: 'pre-wrap', // Preserve all whitespace exactly as typed
+      wordBreak: 'break-word',
+    });
+    
+    // Insert each paragraph at the current range position
+    r.insertNode(p);
+    r.setStartAfter(p);
+    
+    // Add line break after each line except the last one
+    if (idx < lines.length - 1) {
+      const br = document.createElement('br');
+      r.insertNode(br);
+      r.setStartAfter(br);
+    }
+  });
+
+  // Move cursor to the end of the inserted content
+  r.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(r);
+};
+
 
   // Column manipulation functions
   const addColumnLeft = () => {

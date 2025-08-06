@@ -133,21 +133,22 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                             }}
                         >
                             {isPreview ? (
-                                // Preview mode - static text
-                                <div style={{
-                                    flex: '1 0 0',
-                                    color: localData.thankYouTitle ? '#F33F3F' : 'rgba(243, 63, 63, 0.24)',
-                                    fontFamily: 'Lato',
-                                    fontSize: '64px',
-                                    fontStyle: 'normal',
-                                    fontWeight: 400,
-                                    lineHeight: '80px',
-                                    textTransform: 'capitalize',
-                                    wordWrap: 'break-word',
-                                    whiteSpace: 'pre-wrap'
-                                }}>
-                                    {localData.thankYouTitle || 'Thank You!'}
-                                </div>
+                                localData.thankYouTitle ? (
+                                    <div style={{
+                                        flex: '1 0 0',
+                                        color: '#F33F3F',
+                                        fontFamily: 'Lato',
+                                        fontSize: '64px',
+                                        fontStyle: 'normal',
+                                        fontWeight: 400,
+                                        lineHeight: '80px',
+                                        textTransform: 'capitalize',
+                                        wordWrap: 'break-word',
+                                        whiteSpace: 'pre-wrap'
+                                    }}>
+                                        {localData.thankYouTitle}
+                                    </div>
+                                ) : null
                             ) : (
                                 // Edit mode - input field
                                 <input
@@ -193,21 +194,22 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                             }}
                         >
                             {isPreview ? (
-                                // Preview mode - static text
-                                <div style={{
-                                    color: localData.thankYouMessage ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.24)',
-                                    fontFamily: 'Lato',
-                                    fontSize: '28px',
-                                    fontStyle: 'italic',
-                                    fontWeight: 400,
-                                    lineHeight: '36px',
-                                    flex: '1 0 0',
-                                    minHeight: '150px',
-                                    wordWrap: 'break-word',
-                                    whiteSpace: 'pre-wrap'
-                                }}>
-                                    {localData.thankYouMessage || 'Enter Some thank you greeting'}
-                                </div>
+                                localData.thankYouMessage ? (
+                                    <div style={{
+                                        color: 'rgba(255, 255, 255, 0.9)',
+                                        fontFamily: 'Lato',
+                                        fontSize: '28px',
+                                        fontStyle: 'italic',
+                                        fontWeight: 400,
+                                        lineHeight: '36px',
+                                        flex: '1 0 0',
+                                        minHeight: '150px',
+                                        wordWrap: 'break-word',
+                                        whiteSpace: 'pre-wrap'
+                                    }}>
+                                        {localData.thankYouMessage}
+                                    </div>
+                                ) : null
                             ) : (
                                 // Edit mode - textarea
                                 <textarea
@@ -278,19 +280,21 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                 }}
                             >
                                 {isPreview ? (
-                                    <div style={{
-                                        color: localData.phoneNumber ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
-                                        fontFamily: 'Lato',
-                                        fontSize: '24px',
-                                        fontStyle: 'italic',
-                                        fontWeight: 400,
-                                        lineHeight: '36px',
-                                        flex: '1 0 0',
-                                        wordWrap: 'break-word',
-                                        whiteSpace: 'pre-wrap'
-                                    }}>
-                                        {localData.phoneNumber || '[Phone Number]'}
-                                    </div>
+                                    localData.phoneNumber ? (
+                                        <div style={{
+                                            color: 'rgba(255, 255, 255, 0.7)',
+                                            fontFamily: 'Lato',
+                                            fontSize: '24px',
+                                            fontStyle: 'italic',
+                                            fontWeight: 400,
+                                            lineHeight: '36px',
+                                            flex: '1 0 0',
+                                            wordWrap: 'break-word',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {localData.phoneNumber}
+                                        </div>
+                                    ) : null
                                 ) : (
                                     <input
                                         type="text"
@@ -324,19 +328,21 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                 }}
                             >
                                 {isPreview ? (
-                                    <div style={{
-                                        color: localData.emailAddress ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
-                                        fontFamily: 'Lato',
-                                        fontSize: '24px',
-                                        fontStyle: 'italic',
-                                        fontWeight: 400,
-                                        lineHeight: '36px',
-                                        flex: '1 0 0',
-                                        wordWrap: 'break-word',
-                                        whiteSpace: 'pre-wrap'
-                                    }}>
-                                        {localData.emailAddress || '[Email Address]'}
-                                    </div>
+                                    localData.emailAddress ? (
+                                        <div style={{
+                                            color: 'rgba(255, 255, 255, 0.7)',
+                                            fontFamily: 'Lato',
+                                            fontSize: '24px',
+                                            fontStyle: 'italic',
+                                            fontWeight: 400,
+                                            lineHeight: '36px',
+                                            flex: '1 0 0',
+                                            wordWrap: 'break-word',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {localData.emailAddress}
+                                        </div>
+                                    ) : null
                                 ) : (
                                     <input
                                         type="email"
@@ -370,19 +376,21 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                                 }}
                             >
                                 {isPreview ? (
-                                    <div style={{
-                                        color: localData.websiteOrInstagram ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.50)',
-                                        fontFamily: 'Lato',
-                                        fontSize: '24px',
-                                        fontStyle: 'italic',
-                                        fontWeight: 400,
-                                        lineHeight: '36px',
-                                        flex: '1 0 0',
-                                        wordWrap: 'break-word',
-                                        whiteSpace: 'pre-wrap'
-                                    }}>
-                                        {localData.websiteOrInstagram || '[Website or Instagram Handle]'}
-                                    </div>
+                                    localData.websiteOrInstagram ? (
+                                        <div style={{
+                                            color: 'rgba(255, 255, 255, 0.7)',
+                                            fontFamily: 'Lato',
+                                            fontSize: '24px',
+                                            fontStyle: 'italic',
+                                            fontWeight: 400,
+                                            lineHeight: '36px',
+                                            flex: '1 0 0',
+                                            wordWrap: 'break-word',
+                                            whiteSpace: 'pre-wrap'
+                                        }}>
+                                            {localData.websiteOrInstagram}
+                                        </div>
+                                    ) : null
                                 ) : (
                                     <input
                                         type="text"
@@ -407,12 +415,6 @@ const ThankYouPage = ({ pageId, pageNumber, pageData, onDataChange, isPreview = 
                             </div>
                         </div>
                     </div>
-
-
-
-
-
-
                 </div>
 
                 <div style={{

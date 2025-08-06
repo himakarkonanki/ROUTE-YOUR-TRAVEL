@@ -317,6 +317,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
   return (
     <div
       ref={scrollContainerRef}
+      className="right-panel-scroll-container" // Add class for scroll targeting
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -418,6 +419,8 @@ function RightPanel({ pages, onPageDataUpdate }) {
               <div 
                 key={page.id}
                 ref={sectionRefs.current[page.id]}
+                data-page-id={page.id} // CRITICAL: Add this attribute for scroll functionality
+                className="page-component" // CRITICAL: Add this class for scroll functionality
                 style={{
                   display: 'flex',
                   flexDirection: 'column',

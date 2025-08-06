@@ -23,6 +23,29 @@ function Toolbar({ onInsertTitle, onInsertTable }) {
         background: 'rgba(14, 19, 40, 0.06)',
       }}
     >
+      <style>{`
+        .toolbar-btn {
+          width: 28px;
+          height: 28px;
+          background: #F4F6FA;
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .toolbar-btn:hover {
+          background: #0E1328;
+        }
+        .toolbar-btn img {
+          filter: none;
+          transition: filter 0.15s;
+        }
+        .toolbar-btn:hover img {
+          filter: brightness(0) invert(1);
+        }
+      `}</style>
       {/* Toggle Button */}
       <div
         style={{
@@ -40,16 +63,7 @@ function Toolbar({ onInsertTitle, onInsertTable }) {
         <>
           {/* Title Button */}
           <div
-            style={{
-              width: '28px',
-              height: '28px',
-              background: '#F4F6FA',
-              borderRadius: '50%',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              cursor: 'pointer',
-            }}
+            className="toolbar-btn"
             onClick={onInsertTitle}
           >
             <img src={titleIcon} alt="Title" width="16" height="16" />
@@ -57,16 +71,7 @@ function Toolbar({ onInsertTitle, onInsertTable }) {
 
           {/* Table Button */}
           <div
-            style={{
-              width: '28px',
-              height: '28px',
-              background: '#F4F6FA',
-              borderRadius: '50%',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              cursor: 'pointer',
-            }}
+            className="toolbar-btn"
             onClick={onInsertTable}
           >
             <img src={tableIcon} alt="Table" width="16" height="16" />

@@ -4,8 +4,6 @@ import RightPanel from './RightPanel'
 import LeftPanel from './LeftPanel'
 
 function LandingPage() {
-  // const [page, setPage] = useState(initialPages);
-
   const [pages, setPages] = useState([
     { 
       id: 1, 
@@ -21,11 +19,11 @@ function LandingPage() {
       id: 2, 
       type: 'thankyou', 
       title: 'Thank You Page',
-      thankYouTitle: '',      // Add these fields
-      thankYouMessage: '',    // Add these fields
-      phoneNumber: '',           // Changed from contactDetails
-      emailAddress: '',          // New field
-      websiteOrInstagram: ''       // Add these fields
+      thankYouTitle: '',
+      thankYouMessage: '',
+      phoneNumber: '',
+      emailAddress: '',
+      websiteOrInstagram: ''
     }
   ]);
 
@@ -76,12 +74,12 @@ function LandingPage() {
   };
 
   const duplicatePage = (pageId) => {
-    const pageToGDuplicate = pages.find(p => p.id === pageId);
-    if (pageToGDuplicate && (pageToGDuplicate.type === 'day' || pageToGDuplicate.type === 'policy')) {
+    const pageToDuplicate = pages.find(p => p.id === pageId);
+    if (pageToDuplicate && (pageToDuplicate.type === 'day' || pageToDuplicate.type === 'policy')) {
       const duplicatedPage = {
-        ...pageToGDuplicate,
+        ...pageToDuplicate,
         id: Date.now(),
-        title: `${pageToGDuplicate.title} Copy`
+        title: `${pageToDuplicate.title} Copy`
       };
 
       // Insert the duplicated page right after the original
@@ -116,6 +114,52 @@ function LandingPage() {
     setPages(reorderedPages);
   };
 
+  // Scroll to page functionality
+  const scrollToPage = (pageId) => {
+    // Method 1: Using data-page-id attribute (most reliable)
+    const pageElement = document.querySelector(`[data-page-id="${pageId}"]`);
+    if (pageElement) {
+      pageElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      });
+      return;
+    }
+
+    // Method 2: Alternative approach - find by class and index
+    const pageElements = document.querySelectorAll('.page-component, .pdf-page');
+    const pageIndex = pages.findIndex(page => page.id === pageId);
+    
+    if (pageElements[pageIndex]) {
+      pageElements[pageIndex].scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      });
+      return;
+    }
+
+    // Method 3: If using a specific scroll container in RightPanel
+    const rightPanelContainer = document.querySelector('.right-panel-scroll-container');
+    if (rightPanelContainer) {
+      const targetPageElement = rightPanelContainer.querySelector(`[data-page-id="${pageId}"]`);
+      if (targetPageElement) {
+        const containerRect = rightPanelContainer.getBoundingClientRect();
+        const elementRect = targetPageElement.getBoundingClientRect();
+        const scrollTop = rightPanelContainer.scrollTop + elementRect.top - containerRect.top;
+        
+        rightPanelContainer.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth'
+        });
+      }
+    }
+
+    // Fallback: Log for debugging
+    console.log(`Attempting to scroll to page with ID: ${pageId}`);
+  };
+
   return (
     <div style={{
       display: "flex",
@@ -130,6 +174,7 @@ function LandingPage() {
         onDuplicatePage={duplicatePage}
         onDeletePage={deletePage}
         onReorderPages={handleReorderPages}
+        onPageClick={scrollToPage} // Add the scroll functionality
       />
       <div style={{ marginLeft: '320px', flex: 1 }}>
         <RightPanel 

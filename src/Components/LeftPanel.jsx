@@ -29,7 +29,19 @@ import ThumbnailGenerator from './ThumbnailGenerator'
 import ThankYouImage from '../assets/icons/Thankthumbnail.svg';
 
 // Sortable Item Component
-function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuClick, showPageMenu, pageMenuRef, handleDuplicate, handleDelete, pages, PageThumbnail }) {
+function SortablePageItem({ 
+  page, 
+  hoveredItem, 
+  setHoveredItem, 
+  handlePageMenuClick, 
+  showPageMenu, 
+  pageMenuRef, 
+  handleDuplicate, 
+  handleDelete, 
+  pages, 
+  PageThumbnail,
+  onPageClick // Add this prop
+}) {
   const {
     attributes,
     listeners,
@@ -58,7 +70,14 @@ function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuCli
     transition: 'all 0.2s ease-in-out',
   })
 
-  // ...existing code...
+  // Handle page click for scrolling
+  const handlePageItemClick = (e) => {
+    // Don't trigger scroll if clicking on drag handle or more menu
+    if (e.target.closest('[data-drag-handle]') || e.target.closest('[data-more-menu]')) {
+      return;
+    }
+    onPageClick(page.id);
+  };
 
   return (
     <div
@@ -76,30 +95,39 @@ function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuCli
           style={getPageItemStyle(hoveredItem === `page-${page.id}`)}
           onMouseEnter={() => setHoveredItem(`page-${page.id}`)}
           onMouseLeave={() => setHoveredItem(null)}
+          onClick={handlePageItemClick}
         >
-          <div 
-            {...attributes}
-            {...listeners}
-            style={{ 
-              width: '20px', 
-              height: '20px', 
-              aspectRatio: '1 / 1',
-              cursor: isDragging ? 'grabbing' : 'grab',
-              touchAction: 'none' // Prevents scrolling on touch devices while dragging
-            }}
-          >
-            <img 
-              src={drag_indicator} 
-              alt='drag-indicator' 
-              style={{
-                opacity: isDragging ? 1 : 0.7,
-                transition: 'opacity 0.2s ease-in-out'
+          {/* Only show drag icon for day and policy pages */}
+          {(page.type === 'day' || page.type === 'policy') && (
+            <div 
+              {...attributes}
+              {...listeners}
+              data-drag-handle="true"
+              style={{ 
+                width: '20px', 
+                height: '20px', 
+                aspectRatio: '1 / 1',
+                cursor: isDragging ? 'grabbing' : 'grab',
+                touchAction: 'none'
               }}
-            />
-          </div>
-          
+            >
+              <img 
+                src={drag_indicator} 
+                alt='drag-indicator' 
+                style={{
+                  opacity: isDragging ? 1 : 0.7,
+                  transition: 'opacity 0.2s ease-in-out'
+                }}
+              />
+            </div>
+          )}
+          {/* For cover/thankyou, add a placeholder for spacing */}
+          {(page.type !== 'day' && page.type !== 'policy') && (
+            <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1' }} />
+          )}
+
           <PageThumbnail pageType={page.type} pageId={page.id} />
-          
+
           <div style={{
             display: 'flex',
             padding: '0 8px',
@@ -118,8 +146,9 @@ function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuCli
               {page.title}
             </div>
           </div>
-          
+
           <div 
+            data-more-menu="true"
             style={{
               width: '20px',
               height: '20px',
@@ -169,12 +198,18 @@ function SortablePageItem({ page, hoveredItem, setHoveredItem, handlePageMenuCli
   )
 }
 
-function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderPages }) {
+function LeftPanel({ 
+  pages, 
+  onAddPage, 
+  onDuplicatePage, 
+  onDeletePage, 
+  onReorderPages,
+  onPageClick // Add this prop
+}) {
   // Component to render thumbnail (now in main scope)
   const PageThumbnail = ({ pageType, pageId }) => {
     const page = pages.find(p => p.id === pageId);
     if (pageType === 'thankyou') {
-      // Only render the SVG/PNG used at the bottom of the Thank You page, with dark blue background
       return (
         <div
           style={{
@@ -194,7 +229,6 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
         </div>
       );
     }
-    // Default: render the full page preview
     return (
       <div
         style={{
@@ -213,17 +247,18 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
       </div>
     );
   }
+
   const [hoveredItem, setHoveredItem] = useState(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [showPageMenu, setShowPageMenu] = useState(null)
   const dropdownRef = useRef(null)
   const pageMenuRef = useRef(null)
 
-  // Set up sensors for drag detection[1]
+  // Set up sensors for drag detection
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // 8px movement required before drag starts
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -243,7 +278,7 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
     transition: 'all 0.2s ease-in-out',
   })
 
-  // Handle drag end[1]
+  // Handle drag end
   const handleDragEnd = (event) => {
     const { active, over } = event
 
@@ -251,17 +286,14 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
       return
     }
 
-    // Get only the reorderable pages (day and policy pages)
     const reorderablePages = pages.filter(page => page.type === 'day' || page.type === 'policy')
     
     const oldIndex = reorderablePages.findIndex(page => page.id === active.id)
     const newIndex = reorderablePages.findIndex(page => page.id === over.id)
 
     if (oldIndex !== -1 && newIndex !== -1) {
-      // Reorder the reorderable pages[15]
       const reorderedPages = arrayMove(reorderablePages, oldIndex, newIndex)
       
-      // Reconstruct the full pages array with the new order
       const coverPage = pages.find(page => page.type === 'cover')
       const thankyouPage = pages.find(page => page.type === 'thankyou')
       
@@ -274,6 +306,13 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
       onReorderPages(newPages)
     }
   }
+
+  // Scroll to page function
+  const handleScrollToPage = (pageId) => {
+    if (onPageClick) {
+      onPageClick(pageId);
+    }
+  };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -320,17 +359,15 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
     setShowPageMenu(null)
   }
 
-  // ...existing code...
-
   // Render static page item (for cover and thank you pages)
   const renderStaticPageItem = (pageType, title, hoverId) => {
-    // Find the correct pageId for the given type
     const page = pages.find(p => p.type === pageType);
     return (
       <div
         style={getPageItemStyle(hoveredItem === hoverId)}
         onMouseEnter={() => setHoveredItem(hoverId)}
         onMouseLeave={() => setHoveredItem(null)}
+        onClick={() => page && handleScrollToPage(page.id)}
       >
         <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1' }}>
           <img src={drag_indicator} alt='drag-indicator' style={{ opacity: 0.3 }} />
@@ -535,6 +572,7 @@ function LeftPanel({ pages, onAddPage, onDuplicatePage, onDeletePage, onReorderP
                     handleDelete={handleDelete}
                     pages={pages}
                     PageThumbnail={PageThumbnail}
+                    onPageClick={handleScrollToPage}
                   />
                 ))}
               </div>

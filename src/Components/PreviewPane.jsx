@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import close from '../assets/icons/close.svg'
 import dnd from '../assets/icons/do_not_disturb_on.svg'
 import download from '../assets/icons/download.svg'
@@ -6,13 +6,15 @@ import add from '../assets/icons/add_circle.svg'
 import FrontPage from './FrontPage'
 import DayPage from './DayPage'
 import PolicyPage from './PolicyPage'
+import PolicyPagePreview from './PolicyPagePreview'
 import ThankYouPage from './ThankYouPage'
 import { PDFGenerator } from './pdf/PDFGenerator'
 
-function PreviewPane({ onClose, pages }) {
+function PreviewPane({ onClose, pages, getPolicyPageData }) {
     const pagesContainerRef = useRef(null);
     const [zoomLevel, setZoomLevel] = useState(75);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+    const [policyPageData, setPolicyPageData] = useState({});
     const scrollContainerRef = useRef(null);
 
     // Zoom level options
@@ -38,6 +40,186 @@ function PreviewPane({ onClose, pages }) {
         setZoomLevel(50);
     };
 
+    // Function to extract data from the actual PolicyPage DOM elements
+    const extractDataFromDOM = useCallback((pageId) => {
+        try {
+            // Try to find the PolicyPage component in the main application
+            // This looks for contentEditable elements with the policy page structure
+            const policyPageElements = document.querySelectorAll('[contenteditable="true"]');
+            
+            for (let element of policyPageElements) {
+                // Check if this element belongs to our policy page
+                const parentContainer = element.closest('[data-page-type="policy"]') || 
+                                      element.closest('.policy-page') ||
+                                      // Look for the specific structure from PolicyPage.jsx
+                                      (element.style.fontSize === '64px' ? element.parentNode : null);
+                
+                if (parentContainer) {
+                    // Found a policy page container, extract data
+                    const titleElement = parentContainer.querySelector('[contenteditable="true"][style*="font-size: 64px"], [contenteditable="true"][style*="fontSize: 64px"]') ||
+                                        Array.from(parentContainer.querySelectorAll('[contenteditable="true"]')).find(el => 
+                                            el.style.fontSize === '64px' || 
+                                            getComputedStyle(el).fontSize === '64px'
+                                        );
+                    
+                    const editorElement = Array.from(parentContainer.querySelectorAll('[contenteditable="true"]')).find(el => 
+                        el !== titleElement && 
+                        (el.style.fontSize === '24px' || getComputedStyle(el).fontSize === '24px')
+                    );
+
+                    if (titleElement && editorElement) {
+                        const title = titleElement.textContent || titleElement.innerText || 'Terms & Conditions';
+                        const fields = extractFieldsFromEditor(editorElement);
+                        
+                        return { title, fields };
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error extracting data from DOM:', error);
+        }
+        
+        return null;
+    }, []);
+
+    // Helper function to extract fields from editor element
+    const extractFieldsFromEditor = (editorElement) => {
+        const fields = [];
+        let fieldId = 1;
+
+        const processNode = (node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const tagName = node.tagName.toLowerCase();
+                
+                switch (tagName) {
+                    case 'h2':
+                        fields.push({
+                            id: fieldId++,
+                            type: 'title',
+                            content: node.textContent || node.innerText || ''
+                        });
+                        break;
+                        
+                    case 'p':
+                        const textContent = node.textContent || node.innerText || '';
+                        if (textContent.trim() && !textContent.includes('Type your Terms & Conditions here')) {
+                            fields.push({
+                                id: fieldId++,
+                                type: 'details',
+                                content: node.innerHTML || textContent
+                            });
+                        }
+                        break;
+                        
+                    case 'table':
+                        const tableData = extractTableDataFromElement(node);
+                        if (tableData && tableData.length > 0) {
+                            fields.push({
+                                id: fieldId++,
+                                type: 'table',
+                                content: tableData
+                            });
+                        }
+                        break;
+                }
+            }
+        };
+
+        Array.from(editorElement.childNodes).forEach(processNode);
+        
+        // If no fields found, add default
+        if (fields.length === 0) {
+            fields.push({
+                id: 1,
+                type: 'details',
+                content: 'Type your Terms & Conditions here…'
+            });
+        }
+
+        return fields;
+    };
+
+    // Helper function to extract table data from DOM element
+    const extractTableDataFromElement = (tableElement) => {
+        const rows = [];
+        
+        const thead = tableElement.querySelector('thead');
+        if (thead) {
+            const headerRow = thead.querySelector('tr');
+            if (headerRow) {
+                const headerCells = Array.from(headerRow.querySelectorAll('th')).map(th => 
+                    th.textContent || th.innerText || ''
+                );
+                rows.push(headerCells);
+            }
+        }
+        
+        const tbody = tableElement.querySelector('tbody');
+        if (tbody) {
+            const bodyRows = Array.from(tbody.querySelectorAll('tr'));
+            bodyRows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll('td')).map(td => {
+                    return td.textContent || td.innerText || '';
+                });
+                rows.push(cells);
+            });
+        }
+        
+        return rows;
+    };
+
+    // Update policy page data periodically or when pages change
+    useEffect(() => {
+        const updatePolicyData = () => {
+            const policyPages = pages.filter(page => page.type === 'policy');
+            
+            policyPages.forEach(page => {
+                // Try multiple approaches to get the data
+                let pageData = null;
+                
+                // Approach 1: Use callback function if provided
+                if (getPolicyPageData && typeof getPolicyPageData === 'function') {
+                    try {
+                        pageData = getPolicyPageData(page.id);
+                    } catch (error) {
+                        console.error('Error from getPolicyPageData callback:', error);
+                    }
+                }
+                
+                // Approach 2: Extract from DOM
+                if (!pageData) {
+                    pageData = extractDataFromDOM(page.id);
+                }
+                
+                // Approach 3: Use page data directly
+                if (!pageData) {
+                    pageData = {
+                        title: page.title || 'Terms & Conditions',
+                        fields: page.fields || [{
+                            id: 1,
+                            type: 'details',
+                            content: 'Type your Terms & Conditions here…'
+                        }]
+                    };
+                }
+                
+                if (pageData) {
+                    setPolicyPageData(prev => ({
+                        ...prev,
+                        [page.id]: pageData
+                    }));
+                }
+            });
+        };
+
+        updatePolicyData();
+        
+        // Set up interval to periodically update data
+        const interval = setInterval(updatePolicyData, 1000);
+        
+        return () => clearInterval(interval);
+    }, [pages, getPolicyPageData, extractDataFromDOM]);
+
     // Function to render page component based on type
     const renderPageComponent = (page, pageNumber) => {
         let dayNumber = 1;
@@ -45,8 +227,6 @@ function PreviewPane({ onClose, pages }) {
             const currentPageIndex = pages.findIndex(p => p.id === page.id);
             const dayPagesBefore = pages.slice(0, currentPageIndex).filter(p => p.type === 'day').length;
             dayNumber = dayPagesBefore + 1;
-
-            console.log(`Page ID: ${page.id}, Index: ${currentPageIndex}, Day Number: ${dayNumber}`);
         }
 
         const pageProps = {
@@ -57,21 +237,85 @@ function PreviewPane({ onClose, pages }) {
             ...(page.type === 'day' && { dayNumber }),
         };
 
-        switch (page.type) {
-            case 'cover':
-                return <FrontPage {...pageProps} />;
-            case 'day':
-                return <DayPage {...pageProps} />;
-            case 'policy':
-                return <PolicyPage {...pageProps} />;
-            case 'thankyou':
-                return <ThankYouPage {...pageProps} />;
-            default:
-                return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontFamily: 'Lato', fontSize: '18px', color: '#666' }}>Unknown page type</div>;
+        try {
+            switch (page.type) {
+                case 'cover':
+                    return <FrontPage {...pageProps} />;
+                case 'day':
+                    return <DayPage {...pageProps} />;
+                case 'policy':
+                    // Use the latest extracted data
+                    const currentPolicyData = policyPageData[page.id] || {
+                        title: page.title || 'Terms & Conditions',
+                        fields: page.fields || [{
+                            id: 1,
+                            type: 'details',
+                            content: 'Type your Terms & Conditions here…'
+                        }]
+                    };
+                    
+                    return (
+                        <PolicyPagePreview 
+                            data={currentPolicyData} 
+                            pageNumber={pageNumber} 
+                        />
+                    );
+                case 'thankyou':
+                    return <ThankYouPage {...pageProps} />;
+                default:
+                    return (
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            height: '100%', 
+                            fontFamily: 'Lato', 
+                            fontSize: '18px', 
+                            color: '#666' 
+                        }}>
+                            Unknown page type: {page.type}
+                        </div>
+                    );
+            }
+        } catch (error) {
+            console.error('Error rendering page component:', error);
+            return (
+                <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '100%', 
+                    fontFamily: 'Lato', 
+                    fontSize: '18px', 
+                    color: '#f44336',
+                    flexDirection: 'column',
+                    gap: '8px'
+                }}>
+                    <div>Error loading page</div>
+                    <div style={{ fontSize: '14px', color: '#999' }}>
+                        Page ID: {page.id}, Type: {page.type}
+                    </div>
+                </div>
+            );
         }
     };
 
-    // PDF Download Function using separated PDFGenerator
+    // Extract all policy page data before PDF generation
+    const extractAllPolicyPageData = () => {
+        const policyPages = pages.filter(page => page.type === 'policy');
+        const extractedData = {};
+        
+        policyPages.forEach(page => {
+            extractedData[page.id] = policyPageData[page.id] || {
+                title: page.title || 'Terms & Conditions',
+                fields: page.fields || []
+            };
+        });
+
+        return extractedData;
+    };
+
+    // PDF Download Function
     const downloadAsPDF = async () => {
         if (!pages || pages.length === 0) {
             alert('No pages to download');
@@ -79,32 +323,23 @@ function PreviewPane({ onClose, pages }) {
         }
 
         if (isGeneratingPDF) {
-            console.log('PDF generation already in progress...');
             return;
         }
 
         setIsGeneratingPDF(true);
 
         try {
+            const allPolicyData = extractAllPolicyPageData();
+            
             await PDFGenerator.generateAndDownload({
                 pages,
                 pagesContainerRef: pagesContainerRef.current,
+                policyPageData: allPolicyData,
                 onProgress: (message) => console.log(message)
             });
         } catch (error) {
             console.error('Error generating PDF:', error);
-
-            let errorMessage = 'Error generating PDF. Please try again.';
-
-            if (error.name === 'AbortError') {
-                errorMessage = 'PDF generation timed out. Please try again with fewer pages or simpler content.';
-            } else if (error.message.includes('Failed to fetch')) {
-                errorMessage = 'Cannot connect to PDF service. Please ensure the backend server is running on port 5000.';
-            } else if (error.message) {
-                errorMessage = `Error: ${error.message}`;
-            }
-
-            alert(errorMessage);
+            alert('Error generating PDF. Please try again.');
         } finally {
             setIsGeneratingPDF(false);
         }
@@ -289,6 +524,7 @@ function PreviewPane({ onClose, pages }) {
                                 maxHeight: 'calc(100vh - 150px)'
                             }}
                         >
+
                             {/* Pages container with zoom transformation */}
                             <div
                                 ref={pagesContainerRef}
@@ -305,11 +541,12 @@ function PreviewPane({ onClose, pages }) {
                                 }}
                             >
                                 {/* Render all pages dynamically */}
-                                {pages && pages.map((page, index) => (
+                                {pages && pages.length > 0 ? pages.map((page, index) => (
                                     <div
-                                        key={page.id}
+                                        key={page.id || index}
                                         className="pdf-page"
                                         data-page-id={page.id}
+                                        data-page-type={page.type}
                                         style={{
                                             display: 'flex',
                                             width: '100%',
@@ -327,7 +564,19 @@ function PreviewPane({ onClose, pages }) {
                                         {/* Render the actual page content */}
                                         {renderPageComponent(page, index + 1)}
                                     </div>
-                                ))}
+                                )) : (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        height: '200px',
+                                        fontFamily: 'Lato',
+                                        fontSize: '18px',
+                                        color: '#666'
+                                    }}>
+                                        No pages to preview
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -366,6 +615,21 @@ function PreviewPane({ onClose, pages }) {
                         transform: translateY(0);
                         opacity: 1;
                     }
+                }
+
+                /* Add data attributes for easier DOM querying */
+                .policy-page {
+                    position: relative;
+                }
+                
+                .policy-page::before {
+                    content: attr(data-page-type);
+                    position: absolute;
+                    top: -20px;
+                    left: 0;
+                    font-size: 10px;
+                    color: #999;
+                    display: none;
                 }
             `}</style>
         </div>

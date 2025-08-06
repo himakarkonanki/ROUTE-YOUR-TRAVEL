@@ -33,12 +33,12 @@ function PolicyPagePreview({ data, pageNumber }) {
                         style={{
                             color: '#0E1328',
                             fontFamily: 'Lato',
-                            fontSize: '64px',
+                            fontSize: '28px',
                             fontStyle: 'normal',
-                            fontWeight: 400,
-                            lineHeight: '80px',
-                            textTransform: 'capitalize',
-                            marginBottom: '24px',
+                            fontWeight: 600,
+                            lineHeight: '36px',
+                            marginBottom: '16px',
+                            marginTop: '24px',
                         }}
                     >
                         {field.content}
@@ -63,135 +63,97 @@ function PolicyPagePreview({ data, pageNumber }) {
                 );
 
             case 'table':
-                // Show table even if it's empty or has no content
                 let tableContent = field.content;
 
                 // If no content or invalid content, create default empty table structure
                 if (!tableContent || !Array.isArray(tableContent) || tableContent.length === 0) {
-                    // Create a default 2x4 empty table (header + 3 rows, 2 columns)
                     tableContent = [
-                        ['', ''], // Header row
-                        ['', ''], // Data row 1
-                        ['', ''], // Data row 2
-                        ['', '']  // Data row 3
+                        ['Table Title', 'Table Title'], // Header row
+                        ['Type Here', 'Type Here'], // Data row 1
+                        ['Type Here', 'Type Here'], // Data row 2
+                        ['Enter the details…'] // Last row (spanned)
                     ];
                 }
 
-                // Ensure header row exists and is an array
+                // Ensure we have at least a header row
                 if (!Array.isArray(tableContent[0])) {
-                    tableContent[0] = ['', ''];
+                    tableContent[0] = ['Table Title', 'Table Title'];
                 }
-
-                // If header row is shorter than the longest row, pad it
-                const maxCols = Math.max(...tableContent.map(row => Array.isArray(row) ? row.length : 0), 2);
-                tableContent = tableContent.map(row => {
-                    if (!Array.isArray(row)) return Array(maxCols).fill('');
-                    if (row.length < maxCols) return [...row, ...Array(maxCols - row.length).fill('')];
-                    return row;
-                });
 
                 return (
                     <div key={field.id} style={{
                         marginBottom: '32px',
                         width: '100%',
-                        overflow: 'hidden' // Prevent table overflow
+                        overflow: 'hidden'
                     }}>
                         <table style={{
                             width: '100%',
-                            borderCollapse: 'separate',
-                            borderSpacing: '0',
+                            borderCollapse: 'collapse',
                             fontFamily: 'Lato',
-                            borderRadius: '12px',
-                            overflow: 'hidden',
                             background: '#FFF',
+                            margin: '16px 0',
                         }}>
                             <thead>
                                 <tr>
-                                    {(() => {
-                                        // Check if all header cells are empty
-                                        const allHeaderEmpty = tableContent[0].every(cell => !cell || cell.trim() === '');
-                                        // If all header cells are empty, show a single placeholder in the first cell
-                                        if (allHeaderEmpty) {
-                                            return tableContent[0].map((cell, i) => (
-                                                <th key={i} style={{
-                                                    padding: '16px 20px',
-                                                    background: '#0E1328',
-                                                    color: '#FFF',
-                                                    fontSize: '20px',
-                                                    fontWeight: 600,
-                                                    lineHeight: '28px',
-                                                    textAlign: 'left',
-                                                }}>
-                                                    {i === 0 ? (
-                                                        <span style={{
-                                                            color: 'rgba(255, 255, 255, 0.5)',
-                                                            fontStyle: 'normal'
-                                                        }}>
-                                                            Table Title
-                                                        </span>
-                                                    ) : null}
-                                                </th>
-                                            ));
-                                        }
-                                        // Otherwise, show each header cell or placeholder
-                                        return tableContent[0].map((cell, i) => (
-                                            <th key={i} style={{
-                                                padding: '16px 20px',
-                                                background: '#0E1328',
-                                                color: '#FFF',
-                                                fontSize: '20px',
-                                                fontWeight: 600,
-                                                lineHeight: '28px',
-                                                textAlign: 'left',
-                                            }}>
-                                                {cell || (
-                                                    <span style={{
-                                                        color: 'rgba(255, 255, 255, 0.5)',
-                                                        fontStyle: 'normal'
-                                                    }}>
-                                                        Table Title
-                                                    </span>
-                                                )}
-                                            </th>
-                                        ));
-                                    })()}
+                                    {tableContent[0].map((cell, i) => (
+                                        <th key={i} style={{
+                                            backgroundColor: '#0E1328',
+                                            color: 'white',
+                                            padding: '12px',
+                                            fontSize: '20px',
+                                            fontFamily: 'Lato',
+                                            textAlign: 'left',
+                                            border: 'none',
+                                        }}>
+                                            {cell || 'Table Title'}
+                                        </th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody>
-                                {tableContent.slice(1).map((row, rowIndex) => (
-                                    <tr key={rowIndex}>
-                                        {row.map((cell, colIndex) => (
-                                            <td
-                                                key={colIndex}
-                                                style={{
-                                                    padding: '12px 16px 12px 8px',
-                                                    fontSize: '18px',
-                                                    fontWeight: 400,
-                                                    color: '#0E1328',
-                                                    lineHeight: '24px',
-                                                    borderBottom: rowIndex === tableContent.length - 2
-                                                        ? 'none'
-                                                        : '1px solid rgba(14, 19, 40, 0.12)',
-                                                    textAlign: 'left',
-                                                    background: '#FFF',
-                                                    whiteSpace: 'pre-wrap',
-                                                    minHeight: '60px', // Ensure minimum height for empty cells
-                                                }}
-                                            >
-                                                {/* Show content or placeholder for empty cells */}
-                                                {cell || (
-                                                    <span style={{
-                                                        color: '#9CA3AF',
-                                                        fontStyle: 'normal',
-                                                        fontSize: '16px'
-                                                    }}>
-                                                        Type here
-                                                    </span>
-                                                )}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
+                                {tableContent.slice(1).map((row, rowIndex) => {
+                                    // Handle spanned rows (like "Enter the details...")
+                                    if (Array.isArray(row) && row.length === 1) {
+                                        return (
+                                            <tr key={rowIndex}>
+                                                <td
+                                                    colSpan={tableContent[0].length}
+                                                    style={{
+                                                        padding: '12px',
+                                                        fontSize: '24px',
+                                                        fontFamily: 'Lato',
+                                                        color: '#0E1328',
+                                                        borderBottom: rowIndex === tableContent.length - 2 ? 'none' : '1px solid #E0E0E0',
+                                                        textAlign: 'left',
+                                                    }}
+                                                >
+                                                    {row[0] || 'Enter the details…'}
+                                                </td>
+                                            </tr>
+                                        );
+                                    }
+
+                                    // Handle regular rows
+                                    return (
+                                        <tr key={rowIndex}>
+                                            {(Array.isArray(row) ? row : []).map((cell, colIndex) => (
+                                                <td
+                                                    key={colIndex}
+                                                    style={{
+                                                        padding: '12px',
+                                                        fontSize: '24px',
+                                                        fontFamily: 'Lato',
+                                                        color: '#0E1328',
+                                                        borderBottom: rowIndex === tableContent.length - 2 ? 'none' : '1px solid #E0E0E0',
+                                                        textAlign: 'left',
+                                                    }}
+                                                >
+                                                    {cell || 'Type Here'}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -204,31 +166,11 @@ function PolicyPagePreview({ data, pageNumber }) {
 
     return (
         <>
-            {/* FIXED: Global styles moved to a style element in head */}
             <style>{`
-                /* Ensure rich text content styling is preserved */
-                .policy-preview-content h1 {
-                    font-size: 36px !important;
-                    line-height: 1.2 !important;
-                    margin: 24px 0 16px !important;
-                    font-weight: 700 !important;
-                    color: #0E1328 !important;
-                    font-family: 'Lato', sans-serif !important;
-                }
-                
                 .policy-preview-content h2 {
                     font-size: 28px !important;
                     line-height: 1.3 !important;
                     margin: 20px 0 12px !important;
-                    font-weight: 600 !important;
-                    color: #0E1328 !important;
-                    font-family: 'Lato', sans-serif !important;
-                }
-                
-                .policy-preview-content h3 {
-                    font-size: 22px !important;
-                    line-height: 1.4 !important;
-                    margin: 16px 0 8px !important;
                     font-weight: 600 !important;
                     color: #0E1328 !important;
                     font-family: 'Lato', sans-serif !important;
@@ -243,55 +185,11 @@ function PolicyPagePreview({ data, pageNumber }) {
                     font-weight: 400 !important;
                 }
                 
-                .policy-preview-content ul, .policy-preview-content ol {
-                    margin: 12px 0 !important;
-                    padding-left: 24px !important;
-                    color: #0E1328 !important;
-                    font-family: 'Lato', sans-serif !important;
-                    font-size: 24px !important;
-                    font-weight: 400 !important;
-                    line-height: 32px !important;
-                }
-                
-                .policy-preview-content li {
-                    margin: 4px 0 !important;
-                    line-height: 1.6 !important;
-                    color: #0E1328 !important;
-                    font-family: 'Lato', sans-serif !important;
-                    font-size: 24px !important;
-                    font-weight: 400 !important;
-                }
-                
-                .policy-preview-content blockquote {
-                    border-left: 4px solid #0066cc !important;
-                    padding-left: 16px !important;
-                    margin: 16px 0 !important;
-                    font-style: italic !important;
-                    color: #555 !important;
-                    font-family: 'Lato', sans-serif !important;
-                    font-size: 24px !important;
-                    font-weight: 400 !important;
-                    line-height: 32px !important;
-                }
-                
-                .policy-preview-content strong {
-                    font-weight: bold !important;
-                }
-                
-                .policy-preview-content em {
-                    font-style: italic !important;
-                }
-                
-                .policy-preview-content del {
-                    text-decoration: line-through !important;
-                }
-
-                /* Fix for all text elements in preview */
                 .policy-preview-content * {
                     font-family: 'Lato', sans-serif !important;
                     color: #0E1328 !important;
                 }
-                /* Ensure table header text is visible (white) */
+                
                 .policy-preview-content th {
                     color: #FFF !important;
                 }
@@ -336,12 +234,10 @@ function PolicyPagePreview({ data, pageNumber }) {
                             <div
                                 style={{
                                     display: 'flex',
-                                    padding: '8px 64px',
                                     alignItems: 'center',
                                     alignSelf: 'stretch',
-                                    borderRadius: '16px',
-                                    background: 'rgba(255, 255, 255, 0.04)',
                                     marginBottom: '32px',
+                                    margin: '25px',
                                 }}
                             >
                                 <div style={{
@@ -350,28 +246,39 @@ function PolicyPagePreview({ data, pageNumber }) {
                                     fontSize: '64px',
                                     fontStyle: 'normal',
                                     fontWeight: 400,
-                                    lineHeight: '80px',
-                                    textTransform: 'capitalize',
+                                    lineHeight: 1,
                                 }}>
                                     {title}
                                 </div>
                             </div>
                         )}
 
-                        {/* Dynamic Content - FIXED: Better text styling preservation */}
+                        {/* Dynamic Content */}
                         <div
                             style={{
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignSelf: 'stretch',
-                                paddingLeft: '64px',
-                                paddingRight: '64px',
+                                paddingLeft: '32px',
+                                paddingRight: '32px',
                                 paddingBottom: '120px',
                                 flex: '1 0 0',
                             }}
                         >
                             <div className="policy-preview-content">
-                                {fields && fields.map(field => renderField(field))}
+                                {fields && fields.length > 0 ? (
+                                    fields.map(field => renderField(field))
+                                ) : (
+                                    <div style={{
+                                        color: '#0E1328',
+                                        fontFamily: 'Lato',
+                                        fontSize: '24px',
+                                        lineHeight: 1.6,
+                                        margin: '-20px 0 0 0'
+                                    }}>
+                                        Type your Terms & Conditions here…
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

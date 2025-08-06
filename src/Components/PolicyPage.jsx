@@ -1,18 +1,16 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import Toolbar from './Toolbar';
 import Footer from './Footer';
 import more from '../assets/icons/more_horiz.svg';
 import EditorBar from './EditorBar';
 
-export default function PolicyPage() {
+const PolicyPage = forwardRef((props, ref) => {
   const editorRef = useRef(null);
   const titleRef = useRef(null);
   const [moreButtonPosition, setMoreButtonPosition] = useState({ show: false, x: 0, y: 0, row: null });
   const [showEditorBar, setShowEditorBar] = useState(false);
   const [editorBarPosition, setEditorBarPosition] = useState({ x: 0, y: 0 });
   const [selectedRow, setSelectedRow] = useState(null);
-
-  // ... (keep all existing functions: placeCursorAtEnd, handleInput, handlePaste, insertTitle, insertTable)
 
   const placeCursorAtEnd = (element) => {
     const range = document.createRange();
@@ -26,6 +24,7 @@ export default function PolicyPage() {
   const handleInput = (e) => {
     const el = e.target;
     if (!el) return;
+    // Only restrict input for the main editor, not the title
     if (el === editorRef.current) {
       if (el.scrollHeight > el.clientHeight || el.scrollTop > 0) {
         e.preventDefault();
@@ -47,6 +46,7 @@ export default function PolicyPage() {
     const r = sel.getRangeAt(0);
     r.deleteContents();
 
+    // For title, just insert plain text without paragraph elements
     if (e.target === titleRef.current) {
       const textNode = document.createTextNode(text.replace(/\n/g, ' '));
       r.insertNode(textNode);
@@ -57,6 +57,7 @@ export default function PolicyPage() {
       return;
     }
 
+    // For editor content, keep the original paragraph logic
     text.split('\n').forEach((line, idx) => {
       const p = document.createElement('p');
       p.textContent = line;
@@ -74,33 +75,6 @@ export default function PolicyPage() {
       }
     });
 
-    sel.removeAllRanges();
-    sel.addRange(r);
-  };
-
-  const insertTitle = () => {
-    const el = editorRef.current;
-    if (!el.contains(window.getSelection().anchorNode)) {
-      el.focus();
-      placeCursorAtEnd(el);
-    }
-
-    const sel = window.getSelection();
-    if (!sel.rangeCount) return;
-    const r = sel.getRangeAt(0);
-
-    const h2 = document.createElement('h2');
-    h2.textContent = 'Your Custom Title';
-    Object.assign(h2.style, {
-      fontSize: '28px',
-      margin: '16px 0 8px',
-      fontFamily: 'Lato',
-      color: '#0E1328',
-    });
-
-    r.insertNode(h2);
-    r.setStartAfter(h2);
-    r.collapse(true);
     sel.removeAllRanges();
     sel.addRange(r);
   };
@@ -272,6 +246,33 @@ export default function PolicyPage() {
     setMoreButtonPosition(prev => ({ ...prev, show: false }));
   };
 
+  const insertTitle = () => {
+    const el = editorRef.current;
+    if (!el.contains(window.getSelection().anchorNode)) {
+      el.focus();
+      placeCursorAtEnd(el);
+    }
+
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    const r = sel.getRangeAt(0);
+
+    const h2 = document.createElement('h2');
+    h2.textContent = 'Your Custom Title';
+    Object.assign(h2.style, {
+      fontSize: '28px',
+      margin: '16px 0 8px',
+      fontFamily: 'Lato',
+      color: '#0E1328',
+    });
+
+    r.insertNode(h2);
+    r.setStartAfter(h2);
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+  };
+
   const insertTable = () => {
     const el = editorRef.current;
     if (!el.contains(window.getSelection().anchorNode)) {
@@ -367,6 +368,122 @@ export default function PolicyPage() {
     sel.addRange(r);
   };
 
+  // Data extraction functions for preview
+  const extractPageData = () => {
+    const editorElement = editorRef.current;
+    const titleElement = titleRef.current;
+    
+    if (!editorElement || !titleElement) return null;
+
+    // Extract title
+    const title = titleElement.textContent || titleElement.innerText || 'Terms & Conditions';
+
+    // Extract content from editor
+    const fields = [];
+    let fieldId = 1;
+
+    // Process all child nodes in the editor
+    const processNode = (node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tagName = node.tagName.toLowerCase();
+        
+        switch (tagName) {
+          case 'h2':
+            fields.push({
+              id: fieldId++,
+              type: 'title',
+              content: node.textContent || node.innerText || ''
+            });
+            break;
+            
+          case 'p':
+            const textContent = node.textContent || node.innerText || '';
+            if (textContent.trim() && !textContent.includes('Type your Terms & Conditions here')) {
+              fields.push({
+                id: fieldId++,
+                type: 'details',
+                content: node.innerHTML || textContent
+              });
+            }
+            break;
+            
+          case 'table':
+            const tableData = extractTableData(node);
+            if (tableData && tableData.length > 0) {
+              fields.push({
+                id: fieldId++,
+                type: 'table',
+                content: tableData
+              });
+            }
+            break;
+            
+          default:
+            // For other elements, check if they have text content
+            const content = node.textContent || node.innerText || '';
+            if (content.trim() && !content.includes('Type your Terms & Conditions here')) {
+              fields.push({
+                id: fieldId++,
+                type: 'details',
+                content: node.innerHTML || content
+              });
+            }
+            break;
+        }
+      }
+    };
+
+    // Process all children of the editor
+    Array.from(editorElement.childNodes).forEach(processNode);
+
+    return {
+      title,
+      fields
+    };
+  };
+
+  // Helper function to extract table data
+  const extractTableData = (tableElement) => {
+    const rows = [];
+    
+    // Extract header row from thead
+    const thead = tableElement.querySelector('thead');
+    if (thead) {
+      const headerRow = thead.querySelector('tr');
+      if (headerRow) {
+        const headerCells = Array.from(headerRow.querySelectorAll('th')).map(th => 
+          th.textContent || th.innerText || ''
+        );
+        rows.push(headerCells);
+      }
+    }
+    
+    // Extract body rows from tbody
+    const tbody = tableElement.querySelector('tbody');
+    if (tbody) {
+      const bodyRows = Array.from(tbody.querySelectorAll('tr'));
+      bodyRows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td')).map(td => {
+          // Handle colspan
+          const colspan = parseInt(td.getAttribute('colspan')) || 1;
+          const content = td.textContent || td.innerText || '';
+          
+          // Return content directly (let preview handle colspan)
+          return content;
+        });
+        
+        rows.push(cells);
+      });
+    }
+    
+    return rows;
+  };
+
+  // Expose the extractPageData function via ref
+  useImperativeHandle(ref, () => ({
+    extractPageData
+  }));
+
   return (
     <div
       style={{
@@ -428,6 +545,7 @@ export default function PolicyPage() {
         >
           <p style={{ margin: '-20px 0 0 0' }}>Type your Terms &amp; Conditions here…</p>
           
+          {/* More button overlay */}
           {moreButtonPosition.show && (
             <div
               contentEditable={false}
@@ -465,6 +583,7 @@ export default function PolicyPage() {
             </div>
           )}
 
+          {/* EditorBar overlay */}
           {showEditorBar && (
             <div
               contentEditable={false}
@@ -492,4 +611,8 @@ export default function PolicyPage() {
       <Footer />
     </div>
   );
-}
+});
+
+PolicyPage.displayName = 'PolicyPage';
+
+export default PolicyPage;

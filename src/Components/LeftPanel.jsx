@@ -369,8 +369,9 @@ function LeftPanel({
         onMouseLeave={() => setHoveredItem(null)}
         onClick={() => page && handleScrollToPage(page.id)}
       >
+        {/* Keep the drag indicator space but make it invisible */}
         <div style={{ width: '20px', height: '20px', aspectRatio: '1 / 1' }}>
-          <img src={drag_indicator} alt='drag-indicator' style={{ opacity: 0.3 }} />
+          {/* No image here - just maintaining the space */}
         </div>
         <PageThumbnail pageType={pageType} pageId={page ? page.id : undefined} />
         <div style={{

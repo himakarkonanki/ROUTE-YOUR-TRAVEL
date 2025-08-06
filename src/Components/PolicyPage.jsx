@@ -121,6 +121,7 @@ const PolicyPage = forwardRef((props, ref) => {
         lineHeight: '1.6',
         fontFamily: 'Lato',
         color: '#0E1328',
+        textAlign: 'justify',
       });
       r.insertNode(p);
       if (idx < text.split('\n').length - 1) {
@@ -868,9 +869,12 @@ const PolicyPage = forwardRef((props, ref) => {
             border: 'none',
             outline: 'none',
             position: 'relative',
+            fontFamily: 'Lato',
+            marginTop: 0,
+            textAlign: 'justify',
           }}
         >
-          <p style={{ margin: '-20px 0 0 0' }}>Type your Terms &amp; Conditions here…</p>
+          <p style={{ margin: '-20px 0 0 0', textAlign: 'justify' }}>Type your Terms &amp; Conditions here…</p>
 
           {/* More button overlay - Only show if not in preview mode */}
           {moreButtonPosition.show && !props.isPreview && (

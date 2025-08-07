@@ -145,9 +145,18 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
             labelText: { color: "rgba(255, 255, 255, 0.70)", fontFamily: "Lato", fontSize: "24px", fontWeight: 400, lineHeight: "32px" },
             colon: { color: "rgba(255, 255, 255, 0.70)", fontFamily: "Lato", fontSize: "24px", fontWeight: 400, lineHeight: "32px" },
             counter: { display: "flex", height: "64px", width: "200px", padding: "0 16px", justifyContent: isPreview ? "flex-start" : "center", alignItems: "center", gap: "16px", borderRadius: "16px", background: isPreview ? "transparent" : "rgba(242, 244, 254, 0.12)" },
-            adultsCounterText: { color: localData.adults === 0 ? "rgba(242, 244, 254, 0.12)" : "#FFFFFF", fontSize: isPreview ? "24px" : "24px", width: isPreview ? "auto" : "64px", textAlign: "center", fontFamily: 'Lato', fontWeight: 400, lineHeight: '36px' },
-            childrenCounterText: { color: localData.children === 0 ? "rgba(242, 244, 254, 0.12)" : "#FFFFFF", fontSize: isPreview ? "24px" : "24px", width: isPreview ? "auto" : "64px", textAlign: "center", fontFamily: 'Lato', fontWeight: 400, lineHeight: '36px' },
-            divider: { width: '1px', height: '24px', borderRadius: '2px', background: 'rgba(255, 255, 255, 0.16)' }
+            adultsCounterText: { color: localData.adults === 0 ? "rgba(242, 244, 254, 0.12)" : "#FFFFFF", fontSize: isPreview ? "24px" : "24px", width: isPreview ? "auto" : "64px", textAlign: "center", fontFamily: 'Lato', fontWeight: 400, lineHeight: '1' },
+            childrenCounterText: { color: localData.children === 0 ? "rgba(242, 244, 254, 0.12)" : "#FFFFFF", fontSize: isPreview ? "24px" : "24px", width: isPreview ? "auto" : "64px", textAlign: "center", fontFamily: 'Lato', fontWeight: 400, lineHeight: '1' },
+            divider: { width: '1px', height: '24px', borderRadius: '2px', background: 'rgba(255, 255, 255, 0.16)', flexShrink: 0 },
+            iconButton: { 
+                cursor: "pointer", 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                width: '24px', 
+                height: '24px',
+                flexShrink: 0
+            }
         };
     }, [localData.backgroundImage, isPreview, isHoveringBackground, localData.adults, localData.children]);
 
@@ -305,16 +314,16 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     <div style={styles.labelContainerTall}>
                         <div style={styles.labelText}>
                             Adults
-                            <div style={{ color: "rgba(255, 255, 255, 0.50)", fontSize: "24px", lineHeight: "20px" }}>(Above 12 yrs)</div>
+                            <div style={{ color: "rgba(255, 255, 255, 0.50)", fontSize: "16px", lineHeight: "20px" }}>(Above 12 yrs)</div>
                         </div>
                         {isPreview && <div style={styles.colon}>:</div>}
                     </div>
                     <div style={styles.counter}>
-                        {!isPreview && <div onClick={handleAdultsDecrease} style={{ cursor: "pointer" }}><img src={dnd} alt="minus" width={32} height={32} /></div>}
+                        {!isPreview && <div onClick={handleAdultsDecrease} style={styles.iconButton}><img src={dnd} alt="minus" width={30} height={30} /></div>}
                         {!isPreview && <div style={styles.divider} />}
                         <div style={styles.adultsCounterText}>{localData.adults}</div>
                         {!isPreview && <div style={styles.divider} />}
-                        {!isPreview && <div onClick={handleAdultsIncrease} style={{ cursor: "pointer" }}><img src={add} alt="plus" width={32} height={32} /></div>}
+                        {!isPreview && <div onClick={handleAdultsIncrease} style={styles.iconButton}><img src={add} alt="plus" width={30} height={30} /></div>}
                     </div>
                 </div>
 
@@ -323,16 +332,16 @@ function CoverPage({ pageId, pageNumber, pageData, isPreview = false, onDataUpda
                     <div style={styles.labelContainerTall}>
                         <div style={styles.labelText}>
                             Children
-                            <div style={{ color: "rgba(255, 255, 255, 0.50)", fontSize: "24px", lineHeight: "20px" }}>(Below 12 yrs)</div>
+                            <div style={{ color: "rgba(255, 255, 255, 0.50)", fontSize: "16px", lineHeight: "20px" }}>(Below 12 yrs)</div>
                         </div>
                         {isPreview && <div style={styles.colon}>:</div>}
                     </div>
                     <div style={styles.counter}>
-                        {!isPreview && <div onClick={handleChildrenDecrease} style={{ cursor: "pointer" }}><img src={dnd} alt="minus" width={32} height={32} /></div>}
+                        {!isPreview && <div onClick={handleChildrenDecrease} style={styles.iconButton}><img src={dnd} alt="minus" width={30} height={30} /></div>}
                         {!isPreview && <div style={styles.divider} />}
                         <div style={styles.childrenCounterText}>{localData.children}</div>
                         {!isPreview && <div style={styles.divider} />}
-                        {!isPreview && <div onClick={handleChildrenIncrease} style={{ cursor: "pointer" }}><img src={add} alt="plus" width={32} height={32} /></div>}
+                        {!isPreview && <div onClick={handleChildrenIncrease} style={styles.iconButton}><img src={add} alt="plus" width={30} height={30} /></div>}
                     </div>
                 </div>
 

@@ -212,7 +212,7 @@ function TripDurationPicker({ value, onChange, isPreview = false }) {
       <div
         style={{
           height: '64px',
-          padding: '0 24px',
+          padding: '0 16px',
           display: 'flex',
           alignItems: 'center',
           gap: '16px',
@@ -221,16 +221,23 @@ function TripDurationPicker({ value, onChange, isPreview = false }) {
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
-          color: hasSelectedDates ? '#FFFFFF' : 'rgba(242, 244, 254, 0.12)',
-          fontFamily: 'Lato',
-          fontSize: hasSelectedDates ? '24px' : '24px',
-          fontStyle: 'normal',
-          fontWeight: 400,
-          lineHeight: '36px',
-          userSelect: 'none',
         }}
       >
-        {hasSelectedDates ? `${formatDate(dateRange[0])} - ${formatDate(dateRange[1])}` : 'Select Dates'}
+        <div
+          style={{
+            color: hasSelectedDates ? '#FFFFFF' : 'rgba(242, 244, 254, 0.12)',
+            fontFamily: 'Lato',
+            fontSize: hasSelectedDates ? '24px' : '24px',
+            fontStyle: 'normal',
+            fontWeight: 400,
+            lineHeight: '1.2',
+            userSelect: 'none',
+            flex: 1,
+            paddingBottom: '2px',
+          }}
+        >
+          {hasSelectedDates ? `${formatDate(dateRange[0])} - ${formatDate(dateRange[1])}` : 'Select Dates'}
+        </div>
       </div>
     );
   }
@@ -372,8 +379,8 @@ function TripDurationPicker({ value, onChange, isPreview = false }) {
       ref={pickerRef}
       style={{
         display: 'flex',
-        height: '64px',
-        padding: '0 24px',
+        height: '66px',
+         padding: '0 16px',
         justifyContent: 'center',
         alignItems: 'center',
         gap: '16px',
@@ -393,15 +400,16 @@ function TripDurationPicker({ value, onChange, isPreview = false }) {
           overflow: 'hidden',
           whiteSpace: 'nowrap',
           textOverflow: 'ellipsis',
-          width: hasSelectedDates ? 'auto' : '120px',
+          width: hasSelectedDates ? 'auto' : '108px',
           transition: 'width 0.3s ease-in-out',
           color: hasSelectedDates ? '#FFFFFF' : '#F2F4FE1F',
           fontFamily: 'Lato',
-          fontSize: hasSelectedDates ? '24px' : '24px',
+          fontSize: hasSelectedDates ? '24x': '20px',
           fontStyle: 'normal',
           fontWeight: 400,
-          lineHeight: '36px',
+          lineHeight: '1.2',
           userSelect: 'none',
+           paddingBottom: '2px', 
         }}
       >
         {hasSelectedDates ? `${formatDate(dateRange[0])} - ${formatDate(dateRange[1])}` : 'Select Dates'}
@@ -414,21 +422,22 @@ function TripDurationPicker({ value, onChange, isPreview = false }) {
           height: '24px',
           borderRadius: '2px',
           background: 'rgba(255, 255, 255, 0.16)',
+          flexShrink: 0,
         }}
       />
 
       {/* Calendar Icon */}
       <div
         style={{
-          width: '32px',
-          height: '32px',
-          aspectRatio: '1 / 1',
+          width: '24px',
+          height: '24px',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          flexShrink: 0,
         }}
       >
-        <img src={calendar} alt="Calendar Icon" />
+        <img src={calendar} alt="Calendar Icon" style={{ width: '30px', height: '30px' }} />
       </div>
 
       {/* UPDATED: Smaller Custom Calendar Popup */}

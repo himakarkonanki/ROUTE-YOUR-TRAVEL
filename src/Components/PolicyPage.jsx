@@ -75,12 +75,55 @@ const PolicyPage = forwardRef((props, ref) => {
     sel.addRange(range);
   };
 
+  // Helper function to check if content exceeds available height with more precise boundary detection
+  const checkContentOverflow = (element) => {
+    if (!element) return false;
+    
+    // Get the actual boundaries
+    const editorRect = element.getBoundingClientRect();
+    const containerRect = element.closest('[style*="1088"]').getBoundingClientRect(); // Main container
+    
+    // Calculate the maximum allowed bottom position (accounting for footer space)
+    // Footer typically needs about 60-80px, so we leave that space
+    const footerSpace = 80; // Adjust this value to fine-tune where content stops
+    const maxAllowedBottom = containerRect.bottom - footerSpace;
+    
+    // Check if any content exceeds this boundary
+    const allChildren = element.querySelectorAll('*');
+    for (let child of allChildren) {
+      const childRect = child.getBoundingClientRect();
+      if (childRect.bottom > maxAllowedBottom) {
+        return true; // Content exceeds the allowed area
+      }
+    }
+    
+    // Also check the element's own scroll height vs client height as backup
+    return element.scrollHeight > element.clientHeight;
+  };
+
+  // Helper function to prevent content overflow
+  const preventContentOverflow = (element) => {
+    if (!element) return;
+    
+    // If content overflows, remove the last added content
+    while (checkContentOverflow(element) && element.lastChild) {
+      // Check if the last child is the placeholder text, don't remove it
+      if (element.children.length === 1 && 
+          element.lastChild.textContent?.includes('Type your Terms & Conditions here')) {
+        break;
+      }
+      element.removeChild(element.lastChild);
+    }
+  };
+
   const handleInput = (e) => {
     const el = e.target;
     if (!el) return;
+    
     // Only restrict input for the main editor, not the title
     if (el === editorRef.current) {
-      if (el.scrollHeight > el.clientHeight || el.scrollTop > 0) {
+      // Check if content overflows
+      if (checkContentOverflow(el)) {
         e.preventDefault();
         const sel = window.getSelection();
         if (sel.rangeCount) {
@@ -88,7 +131,91 @@ const PolicyPage = forwardRef((props, ref) => {
           r.setStart(r.startContainer, r.startOffset - 1);
           r.deleteContents();
         }
+        return;
       }
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    const el = e.target;
+    if (!el || el !== editorRef.current) return;
+    
+    // Handle Enter key specifically
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Check if adding a new line would cause overflow
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      
+      const r = sel.getRangeAt(0);
+      
+      // Create a temporary paragraph to test if it would fit
+      const tempP = document.createElement('p');
+      tempP.textContent = ' '; // Minimal content for testing
+      Object.assign(tempP.style, {
+        margin: 0,
+        fontSize: '24px',
+        lineHeight: '1.6',
+        fontFamily: 'Lato',
+        color: '#0E1328',
+        textAlign: 'justify',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        visibility: 'hidden', // Hide during test
+        position: 'absolute',
+      });
+      
+      // Insert temp element to test overflow
+      r.insertNode(tempP);
+      
+      // Check if this causes overflow
+      if (checkContentOverflow(el)) {
+        // Remove the temp element and don't allow the Enter
+        tempP.remove();
+        return;
+      }
+      
+      // Remove temp element and create actual paragraph
+      tempP.remove();
+      
+      // Create the actual new paragraph
+      const p = document.createElement('p');
+      p.innerHTML = '&nbsp;'; // Non-breaking space to maintain paragraph
+      Object.assign(p.style, {
+        margin: 0,
+        fontSize: '24px',
+        lineHeight: '1.6',
+        fontFamily: 'Lato',
+        color: '#0E1328',
+        textAlign: 'justify',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+      });
+      
+      r.insertNode(p);
+      r.setStart(p, 0);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+    
+    // Handle other keys that might add content
+    else if (e.key.length === 1 || e.key === 'Space') {
+      // For regular character input, check if it would cause overflow
+      setTimeout(() => {
+        if (checkContentOverflow(el)) {
+          // Undo the last character
+          const sel = window.getSelection();
+          if (sel.rangeCount) {
+            const r = sel.getRangeAt(0);
+            if (r.startOffset > 0) {
+              r.setStart(r.startContainer, r.startOffset - 1);
+              r.deleteContents();
+            }
+          }
+        }
+      }, 0);
     }
   };
 
@@ -111,14 +238,20 @@ const handlePaste = (e) => {
     return;
   }
 
-  // For editor content, preserve exact formatting as copied
+  // For editor content, handle smart partial pasting
   const lines = text.split('\n');
+  const editorElement = editorRef.current;
   
-  // Insert content exactly as it appears, line by line
-  lines.forEach((line, idx) => {
-    const p = document.createElement('p');
+  // Keep track of successfully added elements
+  let addedElements = [];
+  let lastSuccessfulRange = r.cloneRange();
+  
+  // Try to insert content line by line until we hit the limit
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
     
-    // Use textContent to preserve exact text including all spaces and tabs
+    // Create paragraph element
+    const p = document.createElement('p');
     p.textContent = line;
     
     Object.assign(p.style, {
@@ -128,26 +261,59 @@ const handlePaste = (e) => {
       fontFamily: 'Lato',
       color: '#0E1328',
       textAlign: 'justify',
-      whiteSpace: 'pre-wrap', // Preserve all whitespace exactly as typed
+      whiteSpace: 'pre-wrap',
       wordBreak: 'break-word',
     });
     
-    // Insert each paragraph at the current range position
+    // Save current range position
+    const currentRange = r.cloneRange();
+    
+    // Insert the paragraph
     r.insertNode(p);
     r.setStartAfter(p);
+    addedElements.push(p);
     
     // Add line break after each line except the last one
+    let br = null;
     if (idx < lines.length - 1) {
-      const br = document.createElement('br');
+      br = document.createElement('br');
       r.insertNode(br);
       r.setStartAfter(br);
+      addedElements.push(br);
     }
-  });
+    
+    // Check if content overflows after adding this line
+    if (checkContentOverflow(editorElement)) {
+      // Remove the paragraph (and br if added) that caused overflow
+      if (br && br.parentNode) {
+        br.parentNode.removeChild(br);
+        addedElements.pop(); // Remove br from tracking
+      }
+      if (p.parentNode) {
+        p.parentNode.removeChild(p);
+        addedElements.pop(); // Remove p from tracking
+      }
+      
+      // Restore cursor to the last successful position
+      r.setStart(lastSuccessfulRange.startContainer, lastSuccessfulRange.startOffset);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+      
+      // Stop trying to add more content
+      break;
+    } else {
+      // Update last successful range position
+      lastSuccessfulRange = r.cloneRange();
+    }
+  }
 
-  // Move cursor to the end of the inserted content
-  r.collapse(true);
-  sel.removeAllRanges();
-  sel.addRange(r);
+  // If we successfully added some content, position cursor at the end
+  if (addedElements.length > 0) {
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
 };
 
 
@@ -219,6 +385,13 @@ const handlePaste = (e) => {
       });
     }
 
+    // Check if table addition causes overflow
+    setTimeout(() => {
+      if (checkContentOverflow(editorRef.current)) {
+        preventContentOverflow(editorRef.current);
+      }
+    }, 0);
+
     hideMoreButton();
   };
 
@@ -288,6 +461,13 @@ const handlePaste = (e) => {
         }
       });
     }
+
+    // Check if table addition causes overflow
+    setTimeout(() => {
+      if (checkContentOverflow(editorRef.current)) {
+        preventContentOverflow(editorRef.current);
+      }
+    }, 0);
 
     hideMoreButton();
   };
@@ -389,6 +569,14 @@ const handlePaste = (e) => {
     }
 
     selectedRow.parentNode.insertBefore(newRow, selectedRow);
+
+    // Check if table addition causes overflow
+    setTimeout(() => {
+      if (checkContentOverflow(editorRef.current)) {
+        preventContentOverflow(editorRef.current);
+      }
+    }, 0);
+
     hideMoreButton();
   };
 
@@ -442,6 +630,14 @@ const handlePaste = (e) => {
     } else {
       selectedRow.parentNode.appendChild(newRow);
     }
+
+    // Check if table addition causes overflow
+    setTimeout(() => {
+      if (checkContentOverflow(editorRef.current)) {
+        preventContentOverflow(editorRef.current);
+      }
+    }, 0);
+
     hideMoreButton();
   };
 
@@ -598,6 +794,13 @@ const handlePaste = (e) => {
     r.collapse(true);
     sel.removeAllRanges();
     sel.addRange(r);
+
+    // Check if title addition causes overflow
+    setTimeout(() => {
+      if (checkContentOverflow(el)) {
+        h2.remove();
+      }
+    }, 0);
   };
 
   const insertTable = () => {
@@ -611,6 +814,7 @@ const handlePaste = (e) => {
     if (!sel.rangeCount) return;
     const r = sel.getRangeAt(0);
 
+    // Create table element first to test if it will fit
     const table = document.createElement('table');
     Object.assign(table.style, {
       width: '100%',
@@ -620,6 +824,8 @@ const handlePaste = (e) => {
       margin: '16px 0',
       boxSizing: 'border-box',
       wordBreak: 'break-word',
+      visibility: 'hidden', // Hide during testing
+      position: 'absolute',
     });
 
     const thead = document.createElement('thead');
@@ -701,8 +907,115 @@ const handlePaste = (e) => {
     tbody.appendChild(lastRow);
 
     table.appendChild(tbody);
+
+    // Test insert the table to check for overflow
     r.insertNode(table);
-    r.setStartAfter(table);
+    
+    // Check if table would cause overflow
+    if (checkContentOverflow(el)) {
+      // Remove the test table and don't allow insertion
+      table.remove();
+      return; // Don't insert the table
+    }
+
+    // Remove the test table and insert the actual visible table
+    table.remove();
+
+    // Create the actual table with proper visibility and event handlers
+    const actualTable = document.createElement('table');
+    Object.assign(actualTable.style, {
+      width: '100%',
+      maxWidth: '100%',
+      borderCollapse: 'collapse',
+      tableLayout: 'fixed',
+      margin: '16px 0',
+      boxSizing: 'border-box',
+      wordBreak: 'break-word',
+    });
+
+    const actualThead = document.createElement('thead');
+    const actualHeadRow = document.createElement('tr');
+    ['Table Title', 'Table Title'].forEach((text, idx, arr) => {
+      const th = document.createElement('th');
+      th.textContent = text;
+      // Add click handler for header cells to enable column operations only if not in preview
+      if (!props.isPreview) {
+        th.addEventListener('click', (e) => handleColumnClick(e, th));
+      }
+      const styleObj = {
+        backgroundColor: '#0E1328',
+        color: props.isPreview ? '#9CA3AF' : '#FFF',
+        fontWeight: 400,
+        padding: '12px',
+        fontSize: '20px',
+        fontFamily: 'Lato',
+        textAlign: 'left',
+        border: 'none',
+        boxSizing: 'border-box',
+        cursor: props.isPreview ? 'default' : 'pointer',
+      };
+      if (idx === 0) styleObj.borderTopLeftRadius = '6px';
+      if (idx === arr.length - 1) styleObj.borderTopRightRadius = '6px';
+      Object.assign(th.style, styleObj);
+      actualHeadRow.appendChild(th);
+    });
+    actualThead.appendChild(actualHeadRow);
+    actualTable.appendChild(actualThead);
+
+    const actualTbody = document.createElement('tbody');
+    for (let i = 0; i < 3; i++) {
+      const tr = document.createElement('tr');
+      if (!props.isPreview) {
+        tr.addEventListener('click', (e) => handleRowClick(e, tr));
+      }
+      Object.assign(tr.style, {
+        cursor: props.isPreview ? 'default' : 'pointer',
+        position: 'relative',
+      });
+
+      for (let j = 0; j < 2; j++) {
+        const td = document.createElement('td');
+        td.textContent = 'Type Here';
+        Object.assign(td.style, {
+          padding: '12px',
+          fontSize: '24px',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          borderBottom: '1px solid #E0E0E0',
+          boxSizing: 'border-box',
+        });
+        tr.appendChild(td);
+      }
+      actualTbody.appendChild(tr);
+    }
+
+    const actualLastRow = document.createElement('tr');
+    if (!props.isPreview) {
+      actualLastRow.addEventListener('click', (e) => handleRowClick(e, actualLastRow));
+    }
+    Object.assign(actualLastRow.style, {
+      cursor: props.isPreview ? 'default' : 'pointer',
+      position: 'relative',
+    });
+
+    const actualLastCell = document.createElement('td');
+    actualLastCell.colSpan = 2;
+    actualLastCell.textContent = 'Enter the details…';
+    Object.assign(actualLastCell.style, {
+      padding: '12px',
+      fontSize: '24px',
+      fontFamily: 'Lato',
+      color: '#0E1328',
+      boxSizing: 'border-box',
+    });
+    actualLastRow.appendChild(actualLastCell);
+    actualTbody.appendChild(actualLastRow);
+
+    actualTable.appendChild(actualTbody);
+
+    // Insert the actual table
+    r.insertNode(actualTable);
+    r.setStartAfter(actualTable);
     r.collapse(true);
     sel.removeAllRanges();
     sel.addRange(r);
@@ -864,7 +1177,7 @@ const handlePaste = (e) => {
         Terms &amp; Conditions
       </div>
 
-      <div style={{ position: 'relative', flex: 1, margin: '0 0 32px' }}>
+      <div style={{ position: 'relative', flex: 1, margin: '0 0 8px' }}>
         {!props.isPreview && <Toolbar onInsertTitle={insertTitle} onInsertTable={insertTable} />}
 
         <div
@@ -872,12 +1185,14 @@ const handlePaste = (e) => {
           contentEditable={!props.isPreview}
           suppressContentEditableWarning
           onInput={handleInput}
+          onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           style={{
-            height: '100%',
+            height: 'calc(100% - 0px)', // Remove the conservative 40px reduction
+            maxHeight: 'calc(100% - 0px)', // Allow full height usage
             width: '100%',
             padding: 32,
-            overflow: 'hidden',
+            overflow: 'hidden', // Prevent scrolling and content overflow
             fontSize: 24,
             lineHeight: 1.6,
             color: '#0E1328',
@@ -889,6 +1204,7 @@ const handlePaste = (e) => {
             fontFamily: 'Lato',
             marginTop: 0,
             textAlign: 'justify',
+            boxSizing: 'border-box', // Include padding in height calculations
           }}
         >
           <p style={{ margin: '-20px 0 0 0', textAlign: 'justify' }}>Type your Terms &amp; Conditions here…</p>

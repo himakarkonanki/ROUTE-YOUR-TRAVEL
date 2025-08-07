@@ -116,108 +116,126 @@ const PolicyPage = forwardRef((props, ref) => {
     }
   };
 
-  const handleInput = (e) => {
-    const el = e.target;
-    if (!el) return;
+ // Replace your existing handleInput and handleKeyDown functions with these fixed versions:
+
+const handleInput = (e) => {
+  const el = e.target;
+  if (!el) return;
+  
+  // Only restrict input for the main editor, not the title
+  if (el === editorRef.current) {
+    // Skip overflow check for deletion operations (backspace, delete)
+    if (e.inputType && (e.inputType.includes('delete') || e.inputType.includes('Delete'))) {
+      return; // Don't interfere with deletion operations
+    }
     
-    // Only restrict input for the main editor, not the title
-    if (el === editorRef.current) {
-      // Check if content overflows
-      if (checkContentOverflow(el)) {
-        e.preventDefault();
-        const sel = window.getSelection();
-        if (sel.rangeCount) {
-          const r = sel.getRangeAt(0);
+    // Check if content overflows only for insertion operations
+    if (checkContentOverflow(el)) {
+      e.preventDefault();
+      const sel = window.getSelection();
+      if (sel.rangeCount) {
+        const r = sel.getRangeAt(0);
+        if (r.startOffset > 0) {
           r.setStart(r.startContainer, r.startOffset - 1);
           r.deleteContents();
         }
-        return;
       }
+      return;
     }
-  };
+  }
+};
 
-  const handleKeyDown = (e) => {
-    const el = e.target;
-    if (!el || el !== editorRef.current) return;
+const handleKeyDown = (e) => {
+  const el = e.target;
+  if (!el || el !== editorRef.current) return;
+  
+  // Handle Backspace key specifically - don't interfere with normal backspace behavior
+  if (e.key === 'Backspace' || e.key === 'Delete') {
+    // Let backspace/delete work normally without any overflow checks
+    return;
+  }
+  
+  // Handle Enter key specifically
+  if (e.key === 'Enter') {
+    e.preventDefault();
     
-    // Handle Enter key specifically
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      // Check if adding a new line would cause overflow
-      const sel = window.getSelection();
-      if (!sel.rangeCount) return;
-      
-      const r = sel.getRangeAt(0);
-      
-      // Create a temporary paragraph to test if it would fit
-      const tempP = document.createElement('p');
-      tempP.textContent = ' '; // Minimal content for testing
-      Object.assign(tempP.style, {
-        margin: 0,
-        fontSize: '24px',
-        lineHeight: '1.6',
-        fontFamily: 'Lato',
-        color: '#0E1328',
-        textAlign: 'justify',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-        visibility: 'hidden', // Hide during test
-        position: 'absolute',
-      });
-      
-      // Insert temp element to test overflow
-      r.insertNode(tempP);
-      
-      // Check if this causes overflow
-      if (checkContentOverflow(el)) {
-        // Remove the temp element and don't allow the Enter
-        tempP.remove();
-        return;
-      }
-      
-      // Remove temp element and create actual paragraph
+    // Check if adding a new line would cause overflow
+    const sel = window.getSelection();
+    if (!sel.rangeCount) return;
+    
+    const r = sel.getRangeAt(0);
+    
+    // Create a temporary paragraph to test if it would fit
+    const tempP = document.createElement('p');
+    tempP.innerHTML = '<br>'; // Use <br> instead of &nbsp; for better cursor positioning
+    Object.assign(tempP.style, {
+      margin: 0,
+      fontSize: '24px',
+      lineHeight: '1.6',
+      fontFamily: 'Lato',
+      color: '#0E1328',
+      textAlign: 'justify',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
+      visibility: 'hidden', // Hide during test
+      position: 'absolute', // Remove from document flow during test
+    });
+    
+    // Insert temp element to test overflow
+    r.insertNode(tempP);
+    
+    // Check if this causes overflow using same method as table
+    if (checkContentOverflow(el)) {
+      // Remove the temp element and don't allow the Enter
       tempP.remove();
-      
-      // Create the actual new paragraph
-      const p = document.createElement('p');
-      p.innerHTML = '&nbsp;'; // Non-breaking space to maintain paragraph
-      Object.assign(p.style, {
-        margin: 0,
-        fontSize: '24px',
-        lineHeight: '1.6',
-        fontFamily: 'Lato',
-        color: '#0E1328',
-        textAlign: 'justify',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-      });
-      
-      r.insertNode(p);
-      r.setStart(p, 0);
-      r.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(r);
+      return;
     }
     
-    // Handle other keys that might add content
-    else if (e.key.length === 1 || e.key === 'Space') {
-      // For regular character input, check if it would cause overflow
-      setTimeout(() => {
-        if (checkContentOverflow(el)) {
-          // Undo the last character
-          const sel = window.getSelection();
-          if (sel.rangeCount) {
-            const r = sel.getRangeAt(0);
-            if (r.startOffset > 0) {
-              r.setStart(r.startContainer, r.startOffset - 1);
-              r.deleteContents();
-            }
+    // Remove temp element and create actual paragraph
+    tempP.remove();
+    
+    // Create the actual new paragraph
+    const p = document.createElement('p');
+    p.innerHTML = '<br>'; // Use <br> for proper cursor positioning
+    Object.assign(p.style, {
+      margin: 0,
+      fontSize: '24px',
+      lineHeight: '1.6',
+      fontFamily: 'Lato',
+      color: '#0E1328',
+      textAlign: 'justify',
+      whiteSpace: 'pre-wrap',
+      wordBreak: 'break-word',
+    });
+    
+    r.insertNode(p);
+    
+    // Position cursor at the beginning of the new paragraph
+    r.setStart(p, 0);
+    r.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(r);
+  }
+  
+  // Handle other keys that might add content - but exclude navigation and deletion keys
+  else if (e.key.length === 1 || e.key === 'Space') {
+    // For regular character input, use delayed check to avoid interfering with typing
+    setTimeout(() => {
+      if (checkContentOverflow(el)) {
+        // Only undo if this was actually a content addition (not deletion)
+        const sel = window.getSelection();
+        if (sel.rangeCount) {
+          const r = sel.getRangeAt(0);
+          if (r.startOffset > 0) {
+            r.setStart(r.startContainer, r.startOffset - 1);
+            r.deleteContents();
           }
         }
-      }, 0);
-    }
-  };
+      }
+    }, 0);
+  }
+};
+
 
 const handlePaste = (e) => {
   e.preventDefault();
@@ -238,21 +256,18 @@ const handlePaste = (e) => {
     return;
   }
 
-  // For editor content, handle smart partial pasting
-  const lines = text.split('\n');
+  // For editor content, split into separate paragraphs to match normal behavior
   const editorElement = editorRef.current;
   
-  // Keep track of successfully added elements
-  let addedElements = [];
-  let lastSuccessfulRange = r.cloneRange();
+  // Split text into paragraphs by double line breaks (empty lines)
+  const paragraphs = text.split(/\n\s*\n/).filter(para => para.trim());
   
-  // Try to insert content line by line until we hit the limit
-  for (let idx = 0; idx < lines.length; idx++) {
-    const line = lines[idx];
-    
-    // Create paragraph element
+  // If no double line breaks found, treat as single paragraph with line breaks
+  if (paragraphs.length === 1) {
     const p = document.createElement('p');
-    p.textContent = line;
+    // Only replace single line breaks with <br>, not double ones
+    const formattedText = text.replace(/\n/g, '<br>');
+    p.innerHTML = formattedText;
     
     Object.assign(p.style, {
       margin: 0,
@@ -265,54 +280,125 @@ const handlePaste = (e) => {
       wordBreak: 'break-word',
     });
     
-    // Save current range position
-    const currentRange = r.cloneRange();
+    // Test if it fits
+    const testP = p.cloneNode(true);
+    Object.assign(testP.style, {
+      visibility: 'hidden',
+      position: 'absolute',
+    });
     
-    // Insert the paragraph
-    r.insertNode(p);
-    r.setStartAfter(p);
-    addedElements.push(p);
+    r.insertNode(testP);
     
-    // Add line break after each line except the last one
-    let br = null;
-    if (idx < lines.length - 1) {
-      br = document.createElement('br');
-      r.insertNode(br);
-      r.setStartAfter(br);
-      addedElements.push(br);
-    }
-    
-    // Check if content overflows after adding this line
     if (checkContentOverflow(editorElement)) {
-      // Remove the paragraph (and br if added) that caused overflow
-      if (br && br.parentNode) {
-        br.parentNode.removeChild(br);
-        addedElements.pop(); // Remove br from tracking
-      }
-      if (p.parentNode) {
-        p.parentNode.removeChild(p);
-        addedElements.pop(); // Remove p from tracking
+      testP.remove();
+      // Try to fit partial content
+      const words = text.split(' ');
+      let fittingText = '';
+      
+      for (let i = 0; i < words.length; i++) {
+        const testText = fittingText + (fittingText ? ' ' : '') + words[i];
+        const tempP = document.createElement('p');
+        tempP.innerHTML = testText.replace(/\n/g, '<br>');
+        Object.assign(tempP.style, {
+          margin: 0,
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          textAlign: 'justify',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          visibility: 'hidden',
+          position: 'absolute',
+        });
+        
+        r.insertNode(tempP);
+        
+        if (checkContentOverflow(editorElement)) {
+          tempP.remove();
+          break;
+        } else {
+          fittingText = testText;
+          tempP.remove();
+        }
       }
       
-      // Restore cursor to the last successful position
-      r.setStart(lastSuccessfulRange.startContainer, lastSuccessfulRange.startOffset);
+      if (fittingText) {
+        const finalP = document.createElement('p');
+        finalP.innerHTML = fittingText.replace(/\n/g, '<br>');
+        Object.assign(finalP.style, {
+          margin: 0,
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          textAlign: 'justify',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        });
+        
+        r.insertNode(finalP);
+        r.setStartAfter(finalP);
+        r.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(r);
+      }
+    } else {
+      testP.remove();
+      r.insertNode(p);
+      r.setStartAfter(p);
       r.collapse(true);
       sel.removeAllRanges();
       sel.addRange(r);
-      
-      // Stop trying to add more content
-      break;
-    } else {
-      // Update last successful range position
-      lastSuccessfulRange = r.cloneRange();
     }
-  }
-
-  // If we successfully added some content, position cursor at the end
-  if (addedElements.length > 0) {
-    r.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(r);
+  } else {
+    // Multiple paragraphs - insert each as separate paragraph element
+    let addedElements = [];
+    
+    for (let i = 0; i < paragraphs.length; i++) {
+      const paraText = paragraphs[i].trim();
+      if (!paraText) continue;
+      
+      const p = document.createElement('p');
+      // Handle line breaks within this paragraph
+      p.innerHTML = paraText.replace(/\n/g, '<br>');
+      
+      Object.assign(p.style, {
+        margin: 0,
+        fontSize: '24px',
+        lineHeight: '1.6',
+        fontFamily: 'Lato',
+        color: '#0E1328',
+        textAlign: 'justify',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+      });
+      
+      // Test if this paragraph fits
+      const testP = p.cloneNode(true);
+      Object.assign(testP.style, {
+        visibility: 'hidden',
+        position: 'absolute',
+      });
+      
+      r.insertNode(testP);
+      
+      if (checkContentOverflow(editorElement)) {
+        testP.remove();
+        break;
+      } else {
+        testP.remove();
+        r.insertNode(p);
+        r.setStartAfter(p);
+        addedElements.push(p);
+      }
+    }
+    
+    if (addedElements.length > 0) {
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
   }
 };
 

@@ -43,7 +43,7 @@ function PolicyPagePreview({ data, pageNumber }) {
 
             case 'details':
                 return (
-                    <div
+                    <p
                         key={field.id}
                         style={{
                             fontSize: '24px',
@@ -51,7 +51,7 @@ function PolicyPagePreview({ data, pageNumber }) {
                             color: '#0E1328',
                             fontFamily: 'Lato',
                             textAlign: 'justify',
-                            margin: 0,
+                            margin: 0, // Same as editor paragraphs
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word',
                         }}
@@ -193,10 +193,11 @@ function PolicyPagePreview({ data, pageNumber }) {
                 {title || 'Terms & Conditions'}
             </div>
 
-            <div style={{ position: 'relative', flex: 1, margin: '0 0 32px' }}>
+            <div style={{ position: 'relative', flex: 1, margin: '0 0 8px' }}>
                 <div
                     style={{
-                        height: '100%',
+                        height: 'calc(100% - 0px)',
+                        maxHeight: 'calc(100% - 0px)',
                         width: '100%',
                         padding: 32,
                         overflow: 'hidden',
@@ -211,10 +212,13 @@ function PolicyPagePreview({ data, pageNumber }) {
                         fontFamily: 'Lato',
                         marginTop: 0,
                         textAlign: 'justify',
+                        boxSizing: 'border-box',
                     }}
                 >
                     {fields && fields.length > 0 ? (
-                        fields.map(field => renderField(field))
+                        <div style={{ margin: '-20px 0 0 0' }}>
+                            {fields.map(field => renderField(field))}
+                        </div>
                     ) : (
                         <p style={{ margin: '-20px 0 0 0', textAlign: 'justify' }}>
                             Type your Terms & Conditions here…

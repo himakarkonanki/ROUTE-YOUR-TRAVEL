@@ -22,7 +22,6 @@ const PolicyPage = forwardRef((props, ref) => {
       setMoreButtonPosition({ show: false, x: 0, y: 0, row: null, column: null });
       setSelectedRow(null);
       setSelectedCell(null);
-      setSelectedColumn(null);
     }
   }, [props.isPreview]);
 
@@ -44,7 +43,6 @@ const PolicyPage = forwardRef((props, ref) => {
         setMoreButtonPosition({ show: false, x: 0, y: 0, row: null, column: null });
         setSelectedRow(null);
         setSelectedCell(null);
-        setSelectedColumn(null);
       }
     };
 
@@ -63,7 +61,6 @@ const PolicyPage = forwardRef((props, ref) => {
   const [editorBarPosition, setEditorBarPosition] = useState({ x: 0, y: 0 });
   const [columnEditorBarPosition, setColumnEditorBarPosition] = useState({ x: 0, y: 0 });
   const [selectedRow, setSelectedRow] = useState(null);
-  const [selectedColumn, setSelectedColumn] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
 
   const placeCursorAtEnd = (element) => {
@@ -80,7 +77,6 @@ const PolicyPage = forwardRef((props, ref) => {
     if (!element) return false;
     
     // Get the actual boundaries
-    const editorRect = element.getBoundingClientRect();
     const containerRect = element.closest('[style*="1088"]').getBoundingClientRect(); // Main container
     
     // Calculate the maximum allowed bottom position (accounting for footer space)
@@ -1024,7 +1020,6 @@ const handlePaste = (e) => {
     if (!selectedRow) return;
 
     const tbody = selectedRow.parentNode;
-    const table = tbody.parentNode;
 
     // Don't allow removing if it's the last row in tbody
     if (tbody.children.length <= 1) {
@@ -1116,7 +1111,6 @@ const handlePaste = (e) => {
     setShowColumnEditorBar(false);
     setSelectedRow(null);
     setSelectedCell(null);
-    setSelectedColumn(null);
   };
 
   const handleMoreButtonClick = (e) => {
@@ -1426,15 +1420,16 @@ const handlePaste = (e) => {
         const tagName = node.tagName.toLowerCase();
 
         switch (tagName) {
-          case 'h2':
+          case 'h2': {
             fields.push({
               id: fieldId++,
               type: 'title',
               content: node.textContent || node.innerText || ''
             });
             break;
+          }
 
-          case 'p':
+          case 'p': {
             const textContent = node.textContent || node.innerText || '';
             if (textContent.trim() && !textContent.includes('Type your Terms & Conditions here')) {
               fields.push({
@@ -1444,7 +1439,7 @@ const handlePaste = (e) => {
               });
             }
             break;
-
+          }
           case 'ul':
           case 'ol':
             // For lists, preserve the full HTML structure
@@ -1458,7 +1453,7 @@ const handlePaste = (e) => {
             }
             break;
 
-          case 'table':
+          case 'table': {
             const tableData = extractTableData(node);
             if (tableData && tableData.length > 0) {
               fields.push({
@@ -1468,8 +1463,9 @@ const handlePaste = (e) => {
               });
             }
             break;
+          }
 
-          default:
+          default: {
             // For other elements, check if they have text content
             const content = node.textContent || node.innerText || '';
             if (content.trim() && !content.includes('Type your Terms & Conditions here')) {
@@ -1482,6 +1478,7 @@ const handlePaste = (e) => {
               });
             }
             break;
+          }
         }
       }
     };
@@ -1517,8 +1514,6 @@ const handlePaste = (e) => {
       const bodyRows = Array.from(tbody.querySelectorAll('tr'));
       bodyRows.forEach(row => {
         const cells = Array.from(row.querySelectorAll('td')).map(td => {
-          // Handle colspan
-          const colspan = parseInt(td.getAttribute('colspan')) || 1;
           const content = td.textContent || td.innerText || '';
 
           // Return content directly (let preview handle colspan)

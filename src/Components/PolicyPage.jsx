@@ -118,32 +118,51 @@ const PolicyPage = forwardRef((props, ref) => {
 
  // Replace your existing handleInput and handleKeyDown functions with these fixed versions:
 
-const handleInput = (e) => {
-  const el = e.target;
-  if (!el) return;
-  
-  // Only restrict input for the main editor, not the title
-  if (el === editorRef.current) {
-    // Skip overflow check for deletion operations (backspace, delete)
-    if (e.inputType && (e.inputType.includes('delete') || e.inputType.includes('Delete'))) {
-      return; // Don't interfere with deletion operations
-    }
-    
-    // Check if content overflows only for insertion operations
-    if (checkContentOverflow(el)) {
-      e.preventDefault();
-      const sel = window.getSelection();
-      if (sel.rangeCount) {
-        const r = sel.getRangeAt(0);
-        if (r.startOffset > 0) {
-          r.setStart(r.startContainer, r.startOffset - 1);
-          r.deleteContents();
-        }
+  // Function to notify parent of data changes
+  const notifyDataChange = () => {
+    if (props.onDataUpdate) {
+      const pageData = extractPageData();
+      if (pageData) {
+        props.onDataUpdate(pageData);
       }
-      return;
     }
-  }
-};
+  };
+
+  // Enhanced input handler that also notifies of changes
+  const handleInput = (e) => {
+    const el = e.target;
+    if (!el) return;
+    
+    // Only restrict input for the main editor, not the title
+    if (el === editorRef.current) {
+      // Skip overflow check for deletion operations (backspace, delete)
+      if (e.inputType && (e.inputType.includes('delete') || e.inputType.includes('Delete'))) {
+        // Notify of changes after deletion
+        setTimeout(notifyDataChange, 100);
+        return; // Don't interfere with deletion operations
+      }
+      
+      // Check if content overflows only for insertion operations
+      if (checkContentOverflow(el)) {
+        e.preventDefault();
+        const sel = window.getSelection();
+        if (sel.rangeCount) {
+          const r = sel.getRangeAt(0);
+          if (r.startOffset > 0) {
+            r.setStart(r.startContainer, r.startOffset - 1);
+            r.deleteContents();
+          }
+        }
+        return;
+      }
+      
+      // Notify of changes after successful input
+      setTimeout(notifyDataChange, 100);
+    } else if (el === titleRef.current) {
+      // Notify of title changes
+      setTimeout(notifyDataChange, 100);
+    }
+  };
 
 const handleKeyDown = (e) => {
   const el = e.target;
@@ -159,62 +178,189 @@ const handleKeyDown = (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
     
-    // Check if adding a new line would cause overflow
     const sel = window.getSelection();
     if (!sel.rangeCount) return;
     
     const r = sel.getRangeAt(0);
+    const currentNode = sel.anchorNode;
     
-    // Create a temporary paragraph to test if it would fit
-    const tempP = document.createElement('p');
-    tempP.innerHTML = '<br>'; // Use <br> instead of &nbsp; for better cursor positioning
-    Object.assign(tempP.style, {
-      margin: 0,
-      fontSize: '24px',
-      lineHeight: '1.6',
-      fontFamily: 'Lato',
-      color: '#0E1328',
-      textAlign: 'justify',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
-      visibility: 'hidden', // Hide during test
-      position: 'absolute', // Remove from document flow during test
-    });
-    
-    // Insert temp element to test overflow
-    r.insertNode(tempP);
-    
-    // Check if this causes overflow using same method as table
-    if (checkContentOverflow(el)) {
-      // Remove the temp element and don't allow the Enter
-      tempP.remove();
-      return;
+    // Check if we're inside a list item
+    let listItem = currentNode;
+    while (listItem && listItem.nodeType !== Node.ELEMENT_NODE) {
+      listItem = listItem.parentNode;
     }
     
-    // Remove temp element and create actual paragraph
-    tempP.remove();
+    // Find the closest list item
+    while (listItem && listItem.tagName !== 'LI') {
+      listItem = listItem.parentNode;
+      if (listItem === el) break; // Don't go beyond the editor
+    }
     
-    // Create the actual new paragraph
-    const p = document.createElement('p');
-    p.innerHTML = '<br>'; // Use <br> for proper cursor positioning
-    Object.assign(p.style, {
-      margin: 0,
-      fontSize: '24px',
-      lineHeight: '1.6',
-      fontFamily: 'Lato',
-      color: '#0E1328',
-      textAlign: 'justify',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
-    });
-    
-    r.insertNode(p);
-    
-    // Position cursor at the beginning of the new paragraph
-    r.setStart(p, 0);
-    r.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(r);
+    if (listItem && listItem.tagName === 'LI') {
+      // We're inside a list item
+      const list = listItem.parentNode; // ul or ol
+      const isEmptyListItem = listItem.textContent.trim() === '';
+      
+      if (isEmptyListItem) {
+        // If the list item is empty, exit the list and create a paragraph
+        e.preventDefault();
+        
+        // Remove the empty list item
+        listItem.remove();
+        
+        // Create a new paragraph after the list
+        const newP = document.createElement('p');
+        newP.innerHTML = '<br>';
+        Object.assign(newP.style, {
+          margin: '0',
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          textAlign: 'justify',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        });
+        
+        // Insert the paragraph after the list
+        if (list.nextSibling) {
+          list.parentNode.insertBefore(newP, list.nextSibling);
+        } else {
+          list.parentNode.appendChild(newP);
+        }
+        
+        // If the list is now empty, remove it
+        if (list.children.length === 0) {
+          list.remove();
+        }
+        
+        // Place cursor in the new paragraph
+        const range = document.createRange();
+        range.setStart(newP, 0);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        
+        // Notify of changes
+        setTimeout(notifyDataChange, 100);
+        
+        return;
+      } else {
+        // Create a new list item
+        const newLi = document.createElement('li');
+        newLi.innerHTML = '<br>';
+        Object.assign(newLi.style, {
+          margin: '0 0 8px 0',
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          textAlign: 'justify',
+          display: 'list-item',
+        });
+        
+        // Check if adding this list item would cause overflow
+        const tempLi = newLi.cloneNode(true);
+        Object.assign(tempLi.style, {
+          visibility: 'hidden',
+          position: 'absolute',
+        });
+        
+        // Insert temporarily to test
+        if (listItem.nextSibling) {
+          list.insertBefore(tempLi, listItem.nextSibling);
+        } else {
+          list.appendChild(tempLi);
+        }
+        
+        if (checkContentOverflow(el)) {
+          // Remove temp element and don't allow the new list item
+          tempLi.remove();
+          return;
+        }
+        
+        // Remove temp element and insert actual list item
+        tempLi.remove();
+        
+        if (listItem.nextSibling) {
+          list.insertBefore(newLi, listItem.nextSibling);
+        } else {
+          list.appendChild(newLi);
+        }
+        
+        // Place cursor in the new list item
+        const range = document.createRange();
+        range.setStart(newLi, 0);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        
+        // Notify of changes
+        setTimeout(notifyDataChange, 100);
+        
+        return;
+      }
+    } else {
+      // We're not in a list, handle normal paragraph creation
+      // Check if adding a new line would cause overflow
+      if (!sel.rangeCount) return;
+      
+      const r = sel.getRangeAt(0);
+      
+      // Create a temporary paragraph to test if it would fit
+      const tempP = document.createElement('p');
+      tempP.innerHTML = '<br>'; // Use <br> instead of &nbsp; for better cursor positioning
+      Object.assign(tempP.style, {
+        margin: 0,
+        fontSize: '24px',
+        lineHeight: '1.6',
+        fontFamily: 'Lato',
+        color: '#0E1328',
+        textAlign: 'justify',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        visibility: 'hidden', // Hide during test
+        position: 'absolute', // Remove from document flow during test
+      });
+      
+      // Insert temp element to test overflow
+      r.insertNode(tempP);
+      
+      // Check if this causes overflow using same method as table
+      if (checkContentOverflow(el)) {
+        // Remove the temp element and don't allow the Enter
+        tempP.remove();
+        return;
+      }
+      
+      // Remove temp element and create actual paragraph
+      tempP.remove();
+      
+      // Create the actual new paragraph
+      const p = document.createElement('p');
+      p.innerHTML = '<br>'; // Use <br> for proper cursor positioning
+      Object.assign(p.style, {
+        margin: 0,
+        fontSize: '24px',
+        lineHeight: '1.6',
+        fontFamily: 'Lato',
+        color: '#0E1328',
+        textAlign: 'justify',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+      });
+      
+      r.insertNode(p);
+      
+      // Position cursor at the beginning of the new paragraph
+      r.setStart(p, 0);
+      r.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(r);
+      
+      // Notify of changes
+      setTimeout(notifyDataChange, 100);
+    }
   }
   
   // Handle other keys that might add content - but exclude navigation and deletion keys
@@ -239,7 +385,12 @@ const handleKeyDown = (e) => {
 
 const handlePaste = (e) => {
   e.preventDefault();
-  const text = e.clipboardData.getData('text/plain');
+  
+  // Get both HTML and plain text from clipboard
+  const clipboardData = e.clipboardData || window.clipboardData;
+  const htmlData = clipboardData.getData('text/html');
+  const plainText = clipboardData.getData('text/plain');
+  
   const sel = window.getSelection();
   if (!sel.rangeCount) return;
   const r = sel.getRangeAt(0);
@@ -247,7 +398,7 @@ const handlePaste = (e) => {
 
   // For title, just insert plain text without paragraph elements
   if (e.target === titleRef.current) {
-    const textNode = document.createTextNode(text.replace(/\n/g, ' '));
+    const textNode = document.createTextNode(plainText.replace(/\n/g, ' '));
     r.insertNode(textNode);
     r.setStartAfter(textNode);
     r.collapse(true);
@@ -256,148 +407,274 @@ const handlePaste = (e) => {
     return;
   }
 
-  // For editor content, split into separate paragraphs to match normal behavior
-  const editorElement = editorRef.current;
-  
-  // Split text into paragraphs by double line breaks (empty lines)
-  const paragraphs = text.split(/\n\s*\n/).filter(para => para.trim());
-  
-  // If no double line breaks found, treat as single paragraph with line breaks
-  if (paragraphs.length === 1) {
-    const p = document.createElement('p');
-    // Only replace single line breaks with <br>, not double ones
-    const formattedText = text.replace(/\n/g, '<br>');
-    p.innerHTML = formattedText;
+  // Function to clean and preserve formatting from HTML
+  const cleanHtml = (html) => {
+    // Create a temporary div to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
     
-    Object.assign(p.style, {
-      margin: 0,
-      fontSize: '24px',
-      lineHeight: '1.6',
-      fontFamily: 'Lato',
-      color: '#0E1328',
-      textAlign: 'justify',
-      whiteSpace: 'pre-wrap',
-      wordBreak: 'break-word',
-    });
-    
-    // Test if it fits
-    const testP = p.cloneNode(true);
-    Object.assign(testP.style, {
-      visibility: 'hidden',
-      position: 'absolute',
-    });
-    
-    r.insertNode(testP);
-    
-    if (checkContentOverflow(editorElement)) {
-      testP.remove();
-      // Try to fit partial content
-      const words = text.split(' ');
-      let fittingText = '';
-      
-      for (let i = 0; i < words.length; i++) {
-        const testText = fittingText + (fittingText ? ' ' : '') + words[i];
-        const tempP = document.createElement('p');
-        tempP.innerHTML = testText.replace(/\n/g, '<br>');
-        Object.assign(tempP.style, {
-          margin: 0,
-          fontSize: '24px',
-          lineHeight: '1.6',
-          fontFamily: 'Lato',
-          color: '#0E1328',
-          textAlign: 'justify',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          visibility: 'hidden',
-          position: 'absolute',
-        });
-        
-        r.insertNode(tempP);
-        
-        if (checkContentOverflow(editorElement)) {
-          tempP.remove();
-          break;
-        } else {
-          fittingText = testText;
-          tempP.remove();
+    // Remove unwanted attributes but preserve structure
+    const cleanElement = (element) => {
+      // Remove all attributes except essential ones for formatting
+      const allowedAttributes = ['style', 'colspan'];
+      const attrs = Array.from(element.attributes);
+      attrs.forEach(attr => {
+        if (!allowedAttributes.includes(attr.name.toLowerCase())) {
+          element.removeAttribute(attr.name);
         }
-      }
-      
-      if (fittingText) {
-        const finalP = document.createElement('p');
-        finalP.innerHTML = fittingText.replace(/\n/g, '<br>');
-        Object.assign(finalP.style, {
-          margin: 0,
-          fontSize: '24px',
-          lineHeight: '1.6',
-          fontFamily: 'Lato',
-          color: '#0E1328',
-          textAlign: 'justify',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-        });
-        
-        r.insertNode(finalP);
-        r.setStartAfter(finalP);
-        r.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(r);
-      }
-    } else {
-      testP.remove();
-      r.insertNode(p);
-      r.setStartAfter(p);
-      r.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(r);
-    }
-  } else {
-    // Multiple paragraphs - insert each as separate paragraph element
-    let addedElements = [];
-    
-    for (let i = 0; i < paragraphs.length; i++) {
-      const paraText = paragraphs[i].trim();
-      if (!paraText) continue;
-      
-      const p = document.createElement('p');
-      // Handle line breaks within this paragraph
-      p.innerHTML = paraText.replace(/\n/g, '<br>');
-      
-      Object.assign(p.style, {
-        margin: 0,
-        fontSize: '24px',
-        lineHeight: '1.6',
-        fontFamily: 'Lato',
-        color: '#0E1328',
-        textAlign: 'justify',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
       });
       
-      // Test if this paragraph fits
-      const testP = p.cloneNode(true);
-      Object.assign(testP.style, {
+      // Clean style attribute to only include safe formatting
+      if (element.style) {
+        const allowedStyles = [
+          'font-weight', 'font-style', 'text-decoration',
+          'list-style-type', 'margin-left', 'padding-left'
+        ];
+        const computedStyles = {};
+        
+        allowedStyles.forEach(style => {
+          const value = element.style.getPropertyValue(style);
+          if (value) {
+            computedStyles[style] = value;
+          }
+        });
+        
+        // Clear all styles and re-add only allowed ones
+        element.removeAttribute('style');
+        Object.keys(computedStyles).forEach(style => {
+          element.style.setProperty(style, computedStyles[style]);
+        });
+      }
+      
+      // Recursively clean child elements
+      Array.from(element.children).forEach(child => {
+        cleanElement(child);
+      });
+    };
+    
+    // Clean all elements in the temp div
+    Array.from(tempDiv.children).forEach(element => {
+      cleanElement(element);
+    });
+    
+    return tempDiv.innerHTML;
+  };
+  
+  // Function to convert plain text to HTML with bullet point detection
+  const convertPlainTextToHtml = (text) => {
+    const lines = text.split('\n');
+    let html = '';
+    let inList = false;
+    let listType = null;
+    
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      
+      if (!trimmedLine) {
+        // Empty line - close any open list
+        if (inList) {
+          html += listType === 'ul' ? '</ul>' : '</ol>';
+          inList = false;
+          listType = null;
+        }
+        html += '<p><br></p>';
+        return;
+      }
+      
+      // Check for bullet points (•, *, -, +)
+      const bulletMatch = trimmedLine.match(/^[•*\-+]\s+(.+)$/);
+      // Check for numbered lists (1., 2., etc.)
+      const numberMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+      
+      if (bulletMatch) {
+        // Handle bullet points
+        if (!inList || listType !== 'ul') {
+          if (inList) html += listType === 'ul' ? '</ul>' : '</ol>';
+          html += '<ul>';
+          inList = true;
+          listType = 'ul';
+        }
+        html += `<li>${bulletMatch[1]}</li>`;
+      } else if (numberMatch) {
+        // Handle numbered lists
+        if (!inList || listType !== 'ol') {
+          if (inList) html += listType === 'ul' ? '</ul>' : '</ol>';
+          html += '<ol>';
+          inList = true;
+          listType = 'ol';
+        }
+        html += `<li>${numberMatch[2]}</li>`;
+      } else {
+        // Regular text - close any open list
+        if (inList) {
+          html += listType === 'ul' ? '</ul>' : '</ol>';
+          inList = false;
+          listType = null;
+        }
+        html += `<p>${trimmedLine}</p>`;
+      }
+    });
+    
+    // Close any remaining open list
+    if (inList) {
+      html += listType === 'ul' ? '</ul>' : '</ol>';
+    }
+    
+    return html;
+  };
+
+  // Apply PolicyPage styles to elements
+  const applyPolicyPageStyles = (element) => {
+    const tagName = element.tagName.toLowerCase();
+    
+    switch (tagName) {
+      case 'p':
+        Object.assign(element.style, {
+          margin: '0',
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          textAlign: 'justify',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        });
+        break;
+      case 'ul':
+        Object.assign(element.style, {
+          margin: '0 0 16px 0',
+          paddingLeft: '20px',
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          listStyleType: 'disc',
+          listStylePosition: 'outside',
+        });
+        break;
+      case 'ol':
+        Object.assign(element.style, {
+          margin: '0 0 16px 0',
+          paddingLeft: '20px',
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          listStyleType: 'decimal',
+          listStylePosition: 'outside',
+        });
+        break;
+      case 'li':
+        Object.assign(element.style, {
+          margin: '0 0 8px 0',
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          textAlign: 'justify',
+          display: 'list-item',
+        });
+        break;
+    }
+    
+    // Recursively apply styles to children
+    Array.from(element.children).forEach(child => {
+      applyPolicyPageStyles(child);
+    });
+  };
+
+  // For editor content with overflow checking
+  const editorElement = editorRef.current;
+  let contentToInsert = '';
+  
+  if (htmlData && htmlData.trim()) {
+    // If HTML data exists, clean and use it
+    contentToInsert = cleanHtml(htmlData);
+  } else if (plainText && plainText.trim()) {
+    // Convert plain text to formatted HTML
+    contentToInsert = convertPlainTextToHtml(plainText);
+  }
+  
+  if (contentToInsert) {
+    // Create a temporary container to process the content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = contentToInsert;
+    
+    // Apply PolicyPage styles to all elements
+    Array.from(tempDiv.children).forEach(child => {
+      applyPolicyPageStyles(child);
+    });
+    
+    // Process each element with overflow checking
+    const elementsToInsert = Array.from(tempDiv.children);
+    let insertedElements = [];
+    
+    for (let element of elementsToInsert) {
+      // Test if this element fits
+      const testElement = element.cloneNode(true);
+      Object.assign(testElement.style, {
         visibility: 'hidden',
         position: 'absolute',
       });
       
-      r.insertNode(testP);
+      r.insertNode(testElement);
       
       if (checkContentOverflow(editorElement)) {
-        testP.remove();
-        break;
+        testElement.remove();
+        
+        // If it's a text element, try to fit partial content
+        if (element.tagName === 'P') {
+          const textContent = element.textContent || element.innerText || '';
+          const words = textContent.split(' ');
+          let fittingText = '';
+          
+          for (let i = 0; i < words.length; i++) {
+            const testText = fittingText + (fittingText ? ' ' : '') + words[i];
+            const tempP = document.createElement('p');
+            tempP.textContent = testText;
+            applyPolicyPageStyles(tempP);
+            Object.assign(tempP.style, {
+              visibility: 'hidden',
+              position: 'absolute',
+            });
+            
+            r.insertNode(tempP);
+            
+            if (checkContentOverflow(editorElement)) {
+              tempP.remove();
+              break;
+            } else {
+              fittingText = testText;
+              tempP.remove();
+            }
+          }
+          
+          if (fittingText) {
+            const finalP = document.createElement('p');
+            finalP.textContent = fittingText;
+            applyPolicyPageStyles(finalP);
+            
+            r.insertNode(finalP);
+            r.setStartAfter(finalP);
+            insertedElements.push(finalP);
+          }
+        }
+        break; // Stop inserting more elements
       } else {
-        testP.remove();
-        r.insertNode(p);
-        r.setStartAfter(p);
-        addedElements.push(p);
+        testElement.remove();
+        r.insertNode(element);
+        r.setStartAfter(element);
+        insertedElements.push(element);
       }
     }
     
-    if (addedElements.length > 0) {
+    if (insertedElements.length > 0) {
       r.collapse(true);
       sel.removeAllRanges();
       sel.addRange(r);
+      
+      // Notify of changes after paste
+      setTimeout(notifyDataChange, 100);
     }
   }
 };
@@ -419,9 +696,17 @@ const handlePaste = (e) => {
       if (headerRow) {
         const newTh = document.createElement('th');
         newTh.textContent = 'Table Title';
-        Object.assign(newTh.style, {
+        
+        // Add click handler for the new header cell
+        if (!props.isPreview) {
+          newTh.addEventListener('click', (e) => handleColumnClick(e, newTh));
+        }
+        
+        // Calculate proper styling including border radius
+        const isFirstColumn = columnIndex === 0;
+        const styleObj = {
           backgroundColor: '#0E1328',
-          color: '#FFF',
+          color: props.isPreview ? '#9CA3AF' : '#FFF',
           fontWeight: 400,
           padding: '12px',
           fontSize: '20px',
@@ -429,13 +714,22 @@ const handlePaste = (e) => {
           textAlign: 'left',
           border: 'none',
           boxSizing: 'border-box',
-        });
+          cursor: props.isPreview ? 'default' : 'pointer',
+        };
         
-        if (columnIndex === 0) {
-          headerRow.insertBefore(newTh, headerRow.children[columnIndex]);
-        } else {
-          headerRow.insertBefore(newTh, headerRow.children[columnIndex]);
+        // Add border radius for the new first column
+        if (isFirstColumn) {
+          styleObj.borderTopLeftRadius = '6px';
+          // Remove border radius from the old first column
+          if (headerRow.children[columnIndex]) {
+            headerRow.children[columnIndex].style.borderTopLeftRadius = '0';
+          }
         }
+        
+        Object.assign(newTh.style, styleObj);
+        
+        // Insert the new header cell at the correct position
+        headerRow.insertBefore(newTh, headerRow.children[columnIndex]);
       }
     }
 
@@ -462,11 +756,8 @@ const handlePaste = (e) => {
             boxSizing: 'border-box',
           });
           
-          if (columnIndex === 0) {
-            row.insertBefore(newTd, row.children[0]);
-          } else {
-            row.insertBefore(newTd, row.children[columnIndex]);
-          }
+          // Insert the new cell at the correct position
+          row.insertBefore(newTd, row.children[columnIndex]);
         }
       });
     }
@@ -476,6 +767,8 @@ const handlePaste = (e) => {
       if (checkContentOverflow(editorRef.current)) {
         preventContentOverflow(editorRef.current);
       }
+      // Notify of changes
+      notifyDataChange();
     }, 0);
 
     hideMoreButton();
@@ -885,6 +1178,9 @@ const handlePaste = (e) => {
     setTimeout(() => {
       if (checkContentOverflow(el)) {
         h2.remove();
+      } else {
+        // Notify of changes only if title was successfully added
+        notifyDataChange();
       }
     }, 0);
   };
@@ -1105,6 +1401,9 @@ const handlePaste = (e) => {
     r.collapse(true);
     sel.removeAllRanges();
     sel.addRange(r);
+    
+    // Notify of changes after table insertion
+    setTimeout(notifyDataChange, 100);
   };
 
   // Data extraction functions for preview (existing)
@@ -1141,7 +1440,20 @@ const handlePaste = (e) => {
               fields.push({
                 id: fieldId++,
                 type: 'details',
-                content: node.innerHTML || textContent
+                content: node.outerHTML || node.innerHTML || textContent
+              });
+            }
+            break;
+
+          case 'ul':
+          case 'ol':
+            // For lists, preserve the full HTML structure
+            const listContent = node.outerHTML || '';
+            if (listContent.trim()) {
+              fields.push({
+                id: fieldId++,
+                type: 'details',
+                content: listContent
               });
             }
             break;
@@ -1161,10 +1473,12 @@ const handlePaste = (e) => {
             // For other elements, check if they have text content
             const content = node.textContent || node.innerText || '';
             if (content.trim() && !content.includes('Type your Terms & Conditions here')) {
+              // Preserve HTML structure for complex elements
+              const htmlContent = node.outerHTML || node.innerHTML || content;
               fields.push({
                 id: fieldId++,
                 type: 'details',
-                content: node.innerHTML || content
+                content: htmlContent
               });
             }
             break;
@@ -1218,9 +1532,217 @@ const handlePaste = (e) => {
     return rows;
   };
 
-  // Expose the extractPageData function via ref
+  // Function to restore page data (for undo/redo functionality)
+  const restorePageData = (data) => {
+    if (!data || !editorRef.current || !titleRef.current) return;
+
+    // Restore title
+    if (data.title) {
+      titleRef.current.textContent = data.title;
+    }
+
+    // Restore editor content
+    if (data.fields && Array.isArray(data.fields)) {
+      // Clear existing content
+      editorRef.current.innerHTML = '';
+
+      // Reconstruct content from fields
+      data.fields.forEach(field => {
+        let element;
+
+        switch (field.type) {
+          case 'title':
+            element = document.createElement('h2');
+            element.textContent = field.content;
+            Object.assign(element.style, {
+              fontSize: '28px',
+              margin: '16px 0 8px',
+              fontFamily: 'Lato',
+              color: '#0E1328',
+            });
+            break;
+
+          case 'details':
+            // Check if content is HTML or plain text
+            if (field.content.includes('<')) {
+              // HTML content - create a temporary div to parse it
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = field.content;
+              
+              // Extract the first element (should be the main content)
+              const contentElement = tempDiv.firstElementChild;
+              if (contentElement) {
+                element = contentElement;
+                // Reapply styles to ensure consistency
+                applyPolicyPageStyles(element);
+              }
+            } else {
+              // Plain text content
+              element = document.createElement('p');
+              element.textContent = field.content;
+              Object.assign(element.style, {
+                margin: '0',
+                fontSize: '24px',
+                lineHeight: '1.6',
+                fontFamily: 'Lato',
+                color: '#0E1328',
+                textAlign: 'justify',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              });
+            }
+            break;
+
+          case 'table':
+            // Reconstruct table from table data
+            element = reconstructTable(field.content);
+            break;
+
+          default:
+            // Fallback for unknown types
+            element = document.createElement('p');
+            element.textContent = field.content || '';
+            Object.assign(element.style, {
+              margin: '0',
+              fontSize: '24px',
+              lineHeight: '1.6',
+              fontFamily: 'Lato',
+              color: '#0E1328',
+              textAlign: 'justify',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+            });
+            break;
+        }
+
+        if (element) {
+          editorRef.current.appendChild(element);
+        }
+      });
+
+      // If no content was restored, add the placeholder
+      if (editorRef.current.children.length === 0) {
+        const placeholder = document.createElement('p');
+        placeholder.textContent = 'Type your Terms & Conditions here…';
+        Object.assign(placeholder.style, {
+          margin: '-20px 0 0 0',
+          textAlign: 'justify',
+          fontSize: '24px',
+          lineHeight: '1.6',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+        });
+        editorRef.current.appendChild(placeholder);
+      }
+    }
+  };
+
+  // Helper function to reconstruct table from table data
+  const reconstructTable = (tableData) => {
+    if (!tableData || !Array.isArray(tableData) || tableData.length === 0) return null;
+
+    const table = document.createElement('table');
+    Object.assign(table.style, {
+      width: '100%',
+      maxWidth: '100%',
+      borderCollapse: 'collapse',
+      tableLayout: 'fixed',
+      margin: '16px 0',
+      boxSizing: 'border-box',
+      wordBreak: 'break-word',
+    });
+
+    // Create thead with first row
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    
+    const headerData = tableData[0];
+    headerData.forEach((cellText, idx) => {
+      const th = document.createElement('th');
+      th.textContent = cellText;
+      
+      if (!props.isPreview) {
+        th.addEventListener('click', (e) => handleColumnClick(e, th));
+      }
+      
+      const styleObj = {
+        backgroundColor: '#0E1328',
+        color: props.isPreview ? '#9CA3AF' : '#FFF',
+        fontWeight: 400,
+        padding: '12px',
+        fontSize: '20px',
+        fontFamily: 'Lato',
+        textAlign: 'left',
+        border: 'none',
+        boxSizing: 'border-box',
+        cursor: props.isPreview ? 'default' : 'pointer',
+      };
+      
+      if (idx === 0) styleObj.borderTopLeftRadius = '6px';
+      if (idx === headerData.length - 1) styleObj.borderTopRightRadius = '6px';
+      Object.assign(th.style, styleObj);
+      headRow.appendChild(th);
+    });
+    
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    // Create tbody with remaining rows
+    const tbody = document.createElement('tbody');
+    
+    for (let i = 1; i < tableData.length; i++) {
+      const tr = document.createElement('tr');
+      if (!props.isPreview) {
+        tr.addEventListener('click', (e) => handleRowClick(e, tr));
+      }
+      Object.assign(tr.style, {
+        cursor: props.isPreview ? 'default' : 'pointer',
+        position: 'relative',
+      });
+
+      const rowData = tableData[i];
+      
+      // Check if this is a spanned row (single cell with content)
+      if (rowData.length === 1 && headerData.length > 1) {
+        const td = document.createElement('td');
+        td.colSpan = headerData.length;
+        td.textContent = rowData[0];
+        Object.assign(td.style, {
+          padding: '12px',
+          fontSize: '24px',
+          fontFamily: 'Lato',
+          color: '#0E1328',
+          boxSizing: 'border-box',
+        });
+        tr.appendChild(td);
+      } else {
+        // Regular row with individual cells
+        rowData.forEach(cellText => {
+          const td = document.createElement('td');
+          td.textContent = cellText;
+          Object.assign(td.style, {
+            padding: '12px',
+            fontSize: '24px',
+            fontFamily: 'Lato',
+            color: '#0E1328',
+            borderBottom: '1px solid #E0E0E0',
+            boxSizing: 'border-box',
+          });
+          tr.appendChild(td);
+        });
+      }
+      
+      tbody.appendChild(tr);
+    }
+    
+    table.appendChild(tbody);
+    return table;
+  };
+
+  // Expose both extractPageData and restorePageData via ref
   useImperativeHandle(ref, () => ({
-    extractPageData
+    extractPageData,
+    restorePageData
   }));
 
   return (

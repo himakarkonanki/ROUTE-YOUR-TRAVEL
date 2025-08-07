@@ -14,6 +14,7 @@ import PreviewPane from './PreviewPane';
 function RightPanel({ pages, onPageDataUpdate }) {
   const scrollContainerRef = useRef(null);
   const sectionRefs = useRef({});
+  const pageComponentRefs = useRef({}); // Add refs for page components
   const [showPreview, setShowPreview] = useState(false);
   
   // History management state
@@ -70,6 +71,13 @@ function RightPanel({ pages, onPageDataUpdate }) {
         // Update all pages with previous state
         previousState.forEach(page => {
           onPageDataUpdate(page.id, page, true); // true flag indicates bulk update
+          
+          // Special handling for PolicyPage to restore editor content
+          if (page.type === 'policy' && pageComponentRefs.current[page.id]?.current?.restorePageData) {
+            setTimeout(() => {
+              pageComponentRefs.current[page.id].current.restorePageData(page);
+            }, 50); // Small delay to ensure DOM is updated
+          }
         });
       }
       
@@ -91,6 +99,13 @@ function RightPanel({ pages, onPageDataUpdate }) {
         // Update all pages with next state
         nextState.forEach(page => {
           onPageDataUpdate(page.id, page, true); // true flag indicates bulk update
+          
+          // Special handling for PolicyPage to restore editor content
+          if (page.type === 'policy' && pageComponentRefs.current[page.id]?.current?.restorePageData) {
+            setTimeout(() => {
+              pageComponentRefs.current[page.id].current.restorePageData(page);
+            }, 50); // Small delay to ensure DOM is updated
+          }
         });
       }
       
@@ -166,6 +181,9 @@ function RightPanel({ pages, onPageDataUpdate }) {
     pages.forEach(page => {
       if (!sectionRefs.current[page.id]) {
         sectionRefs.current[page.id] = React.createRef();
+      }
+      if (!pageComponentRefs.current[page.id]) {
+        pageComponentRefs.current[page.id] = React.createRef();
       }
     });
   }, [pages]);
@@ -278,7 +296,7 @@ function RightPanel({ pages, onPageDataUpdate }) {
         pageContent = <DayPage {...pageProps} />;
         break;
       case 'policy':
-        pageContent = <PolicyPage {...pageProps} />;
+        pageContent = <PolicyPage {...pageProps} ref={pageComponentRefs.current[page.id]} />;
         break;
       case 'thankyou':
         pageContent = <ThankYouPage {...pageProps} />;

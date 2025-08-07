@@ -43,7 +43,7 @@ function PolicyPagePreview({ data, pageNumber }) {
 
             case 'details':
                 return (
-                    <p
+                    <div
                         key={field.id}
                         style={{
                             fontSize: '24px',
@@ -51,7 +51,7 @@ function PolicyPagePreview({ data, pageNumber }) {
                             color: '#0E1328',
                             fontFamily: 'Lato',
                             textAlign: 'justify',
-                            margin: 0, // Same as editor paragraphs
+                            margin: 0,
                             whiteSpace: 'pre-wrap',
                             wordBreak: 'break-word',
                         }}
@@ -179,6 +179,79 @@ function PolicyPagePreview({ data, pageNumber }) {
                 fontFamily: 'Lato',
             }}
         >
+            <style>
+                {`
+                    /* Policy Preview Styles - Match editor formatting exactly */
+                    [data-policy-preview] p {
+                        margin: 0 !important;
+                        font-size: 24px !important;
+                        line-height: 1.6 !important;
+                        font-family: 'Lato' !important;
+                        color: #0E1328 !important;
+                        text-align: justify !important;
+                        white-space: pre-wrap !important;
+                        word-break: break-word !important;
+                    }
+                    
+                    [data-policy-preview] ul {
+                        margin: 0 0 16px 0 !important;
+                        padding-left: 20px !important;
+                        font-size: 24px !important;
+                        line-height: 1.6 !important;
+                        font-family: 'Lato' !important;
+                        color: #0E1328 !important;
+                        list-style-type: disc !important;
+                        list-style-position: outside !important;
+                    }
+                    
+                    [data-policy-preview] ol {
+                        margin: 0 0 16px 0 !important;
+                        padding-left: 20px !important;
+                        font-size: 24px !important;
+                        line-height: 1.6 !important;
+                        font-family: 'Lato' !important;
+                        color: #0E1328 !important;
+                        list-style-type: decimal !important;
+                        list-style-position: outside !important;
+                    }
+                    
+                    [data-policy-preview] li {
+                        margin: 0 0 8px 0 !important;
+                        font-size: 24px !important;
+                        line-height: 1.6 !important;
+                        font-family: 'Lato' !important;
+                        color: #0E1328 !important;
+                        text-align: justify !important;
+                        display: list-item !important;
+                    }
+                    
+                    [data-policy-preview] h1,
+                    [data-policy-preview] h2,
+                    [data-policy-preview] h3,
+                    [data-policy-preview] h4,
+                    [data-policy-preview] h5,
+                    [data-policy-preview] h6 {
+                        font-size: 24px !important;
+                        line-height: 1.6 !important;
+                        font-family: 'Lato' !important;
+                        color: #0E1328 !important;
+                        margin: 0 !important;
+                        font-weight: bold !important;
+                    }
+                    
+                    [data-policy-preview] strong {
+                        font-weight: bold !important;
+                    }
+                    
+                    [data-policy-preview] em {
+                        font-style: italic !important;
+                    }
+                    
+                    [data-policy-preview] u {
+                        text-decoration: underline !important;
+                    }
+                `}
+            </style>
             <div
                 style={{
                     fontSize: 64,
@@ -195,6 +268,7 @@ function PolicyPagePreview({ data, pageNumber }) {
 
             <div style={{ position: 'relative', flex: 1, margin: '0 0 8px' }}>
                 <div
+                    data-policy-preview
                     style={{
                         height: 'calc(100% - 0px)',
                         maxHeight: 'calc(100% - 0px)',

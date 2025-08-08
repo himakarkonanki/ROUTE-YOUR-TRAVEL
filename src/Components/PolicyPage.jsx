@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import './PolicyPage.css';
 import EditorJS from '@editorjs/editorjs';
 import Header from '@editorjs/header';
@@ -9,12 +9,14 @@ import Delimiter from '@editorjs/delimiter';
 import Quote from '@editorjs/quote';
 import Footer from './Footer';
 
-function PolicyPage({ onDataUpdate }) {
+
+const PolicyPage = React.forwardRef(function PolicyPage({ onDataUpdate, initialData, pageNumber = 1 }, ref) {
   const editorRef = useRef(null);
+  const editorInstanceRef = useRef(null);
   const [editorInstance, setEditorInstance] = useState(null);
 
   useEffect(() => {
-    if (!editorInstance) {
+    if (!editorInstanceRef.current) {
       const editor = new EditorJS({
         holder: 'editorjs',
         onReady: () => {
@@ -42,7 +44,7 @@ function PolicyPage({ onDataUpdate }) {
                 fields.push({ id: fieldId++, type: 'details', content: block.data.text });
               }
             });
-            onDataUpdate({ title, fields });
+            onDataUpdate({ title, fields, blocks: savedData.blocks });
           }
           console.log('Content changed:', savedData);
         },
@@ -98,19 +100,29 @@ function PolicyPage({ onDataUpdate }) {
           }
         },
         data: {
-          blocks: []
+          blocks: initialData && initialData.blocks ? initialData.blocks : []
         }
       });
 
+      editorInstanceRef.current = editor;
       setEditorInstance(editor);
     }
 
     return () => {
-      if (editorInstance && editorInstance.destroy) {
-        editorInstance.destroy();
+      if (editorInstanceRef.current && editorInstanceRef.current.destroy) {
+        editorInstanceRef.current.destroy();
       }
     };
-  }, [editorInstance]);
+  }, [initialData]);
+
+  // Expose restorePageData for undo/redo
+  useImperativeHandle(ref, () => ({
+    restorePageData: (page) => {
+      if (editorInstanceRef.current && page && page.blocks) {
+        editorInstanceRef.current.render({ blocks: page.blocks });
+      }
+    }
+  }));
 
   return (
     <div
@@ -152,9 +164,9 @@ function PolicyPage({ onDataUpdate }) {
         />
       </div>
 
-      <Footer/>
+      <Footer pageNumber={pageNumber}/>
     </div>
   );
-}
+});
 
 export default PolicyPage;

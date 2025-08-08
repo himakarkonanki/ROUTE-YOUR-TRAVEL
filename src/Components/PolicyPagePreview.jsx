@@ -80,7 +80,7 @@ function PolicyPagePreview({ data, pageNumber }) {
       </div>
       
       {/* Footer positioned exactly like in PolicyPage */}
-      <Footer />
+      <Footer pageNumber={pageNumber} />
     </div>
   );
 }

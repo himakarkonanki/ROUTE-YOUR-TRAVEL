@@ -9,7 +9,6 @@ import Delimiter from '@editorjs/delimiter';
 import Quote from '@editorjs/quote';
 import Footer from './Footer';
 
-
 const PolicyPage = React.forwardRef(function PolicyPage({ onDataUpdate, initialData, pageNumber = 1 }, ref) {
   const editorRef = useRef(null);
   const editorInstanceRef = useRef(null);
@@ -43,6 +42,14 @@ const PolicyPage = React.forwardRef(function PolicyPage({ onDataUpdate, initialD
                 fields.push({ id: fieldId++, type: 'details', content: block.data.text });
               } else if (block.type === 'table') {
                 fields.push({ id: fieldId++, type: 'table', content: block.data.content });
+              } else if (block.type === 'list') {
+                // Add list handling
+                fields.push({ 
+                  id: fieldId++, 
+                  type: 'list', 
+                  content: block.data.items,
+                  style: block.data.style || 'unordered'
+                });
               } else if (block.type === 'quote') {
                 fields.push({ id: fieldId++, type: 'details', content: block.data.text });
               }

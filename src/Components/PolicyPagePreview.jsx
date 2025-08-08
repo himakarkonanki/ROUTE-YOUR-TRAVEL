@@ -55,7 +55,6 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
       clear: 'both',
       fontFamily: 'Lato, sans-serif',
       backgroundColor: '#fff',
-      // PDF-specific properties
       pageBreakInside: 'avoid',
       WebkitPrintColorAdjust: 'exact',
       colorAdjust: 'exact',
@@ -71,7 +70,6 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
       textAlign: 'left',
       minHeight: '44px',
       verticalAlign: 'top',
-      // PDF-specific properties
       WebkitPrintColorAdjust: 'exact',
       colorAdjust: 'exact',
       MozAppearance: 'none',
@@ -89,7 +87,6 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
       textAlign: 'left',
       minHeight: '44px',
       verticalAlign: 'top',
-      // PDF-specific properties
       WebkitPrintColorAdjust: 'exact',
       colorAdjust: 'exact',
     },
@@ -104,9 +101,23 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
       textAlign: 'left',
       minHeight: '44px',
       verticalAlign: 'top',
-      // PDF-specific properties
       WebkitPrintColorAdjust: 'exact',
       colorAdjust: 'exact',
+    },
+    list: {
+      margin: '16px 0',
+      paddingLeft: '24px',
+      fontSize: '20px',
+      lineHeight: '1.6',
+      fontFamily: 'Lato, sans-serif',
+      color: 'rgb(14, 19, 40)',
+    },
+    listItem: {
+      marginBottom: '8px',
+      fontSize: '20px',
+      lineHeight: '1.6',
+      fontFamily: 'Lato, sans-serif',
+      color: 'rgb(14, 19, 40)',
     },
     h1: {
       fontSize: '32px',
@@ -180,7 +191,6 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
     return (
       <table key={field.id} style={styles.table}>
         {hasHeaders ? (
-          // Table with explicit headers
           <>
             <thead>
               <tr>
@@ -193,7 +203,7 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
                       WebkitPrintColorAdjust: 'exact',
                       colorAdjust: 'exact'
                     }}>
-                      {cell && cell.trim() !== '' ? cell : '\u00A0'}
+                      {cell && cell.trim() !== '' ? cell : `Column ${j + 1}`}
                     </span>
                   </th>
                 ))}
@@ -221,7 +231,6 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
             </tbody>
           </>
         ) : (
-          // Table without explicit headers - treat first row as header
           <tbody>
             {field.content.map((row, i) => (
               <tr key={i}>
@@ -237,7 +246,7 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
                       WebkitPrintColorAdjust: 'exact',
                       colorAdjust: 'exact'
                     }}>
-                      {cell && cell.trim() !== '' ? cell : '\u00A0'}
+                      {cell && cell.trim() !== '' ? cell : (i === 0 ? `Column ${j + 1}` : '\u00A0')}
                     </span>
                   </td>
                 ))}
@@ -284,6 +293,36 @@ function PolicyPagePreview({ data, pageNumber, isPDFMode = false }) {
                 );
               } else if (field.type === 'table') {
                 return renderTable(field);
+              } else if (field.type === 'list') {
+                const ListTag = field.style === 'ordered' ? 'ol' : 'ul';
+                
+                // Handle different EditorJS list formats
+                let listItems = [];
+                if (Array.isArray(field.content)) {
+                  listItems = field.content.map(item => {
+                    // Handle different formats of list items from EditorJS
+                    if (typeof item === 'string') {
+                      return item;
+                    } else if (item && typeof item === 'object') {
+                      return item.content || item.text || item.value || '';
+                    }
+                    return '';
+                  }).filter(item => item.trim() !== '');
+                }
+                
+                if (listItems.length === 0) {
+                  return null;
+                }
+                
+                return (
+                  <ListTag key={field.id} style={styles.list}>
+                    {listItems.map((item, index) => (
+                      <li key={index} style={styles.listItem}>
+                        {item}
+                      </li>
+                    ))}
+                  </ListTag>
+                );
               } else {
                 return null;
               }

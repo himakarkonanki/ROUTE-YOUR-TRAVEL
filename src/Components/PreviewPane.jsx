@@ -112,6 +112,25 @@ function PreviewPane({ onClose, pages, getPolicyPageData }) {
                         }
                         break;
                         
+                    case 'ul':
+                    case 'ol':
+                        const listItems = Array.from(node.querySelectorAll('li'))
+                            .map(li => {
+                                const text = li.textContent || li.innerText || '';
+                                return text.trim();
+                            })
+                            .filter(text => text !== ''); // Remove empty items
+                            
+                        if (listItems.length > 0) {
+                            fields.push({
+                                id: fieldId++,
+                                type: 'list',
+                                style: tagName === 'ol' ? 'ordered' : 'unordered',
+                                content: listItems
+                            });
+                        }
+                        break;
+                        
                     case 'table':
                         const tableData = extractTableDataFromElement(node);
                         if (tableData && tableData.length > 0) {

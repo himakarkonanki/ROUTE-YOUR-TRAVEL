@@ -1,309 +1,88 @@
-// PolicyPagePreview.jsx
-import React from 'react';
+import React from 'react'
 import Footer from './Footer';
 
 function PolicyPagePreview({ data, pageNumber }) {
-    if (!data) {
-        return (
-            <div style={{
-                width: 1088,
-                height: 1540,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                background: 'white',
-                fontFamily: 'Lato',
-                fontSize: '18px',
-                color: '#666'
-            }}>
-                No content to preview
-            </div>
-        );
-    }
+  if (!data) {
+    return <div>No policy data available.</div>;
+  }
 
-    const { title, fields } = data;
-
-    const renderField = (field) => {
-        switch (field.type) {
-            case 'title':
+  return (
+    <div
+      style={{
+        width: '1088px',
+        height: 'auto',
+        minHeight: '1540px',
+        backgroundColor: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '64px 64px',
+        boxSizing: 'border-box',
+        fontFamily: 'Lato',
+        position: 'relative', // Ensure Footer absolute positioning works
+      }}
+    >
+      <div
+        style={{
+          flex: 1,
+          marginTop: '32px', // Added margin to match PolicyPage
+          marginBottom: '32px', // Added margin to match PolicyPage
+          border: 'none',
+          padding: '16px',
+          borderRadius: '4px',
+          overflow: 'visible',
+          backgroundColor: '#fff',
+          position: 'relative',
+        }}
+      >
+        <div style={{ 
+          fontSize: 20, 
+          color: 'rgb(14, 19, 40)', // Changed to match PolicyPage text color
+          lineHeight: 1.6,
+          textAlign: 'justify' // Added to match PolicyPage
+        }}>
+          {data.fields && data.fields.length > 0 ? (
+            data.fields.map(field => {
+              if (field.type === 'details') {
+                return <div key={field.id} style={{ marginBottom: 16, fontSize: 20, lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: field.content }} />;
+              } else if (field.type === 'table') {
                 return (
-                    <h2
-                        key={field.id}
-                        style={{
-                            fontSize: '28px',
-                            margin: '16px 0 8px',
-                            fontFamily: 'Lato',
-                            color: '#0E1328',
-                            fontWeight: 400,
-                        }}
-                    >
-                        {field.content}
-                    </h2>
+                  <table key={field.id} style={{ width: '100%', borderCollapse: 'collapse', margin: '24px 0' }}>
+                    <tbody>
+                      {field.content.map((row, i) => (
+                        <tr key={i}>
+                          {row.map((cell, j) => (
+                            <td key={j} style={{
+                              border: i === 0 ? 'none' : 'none',
+                              borderBottom: i === 0 ? 'none' : '1px solid #e5e7eb',
+                              background: i === 0 ? 'rgb(14, 19, 40)' : i % 2 === 0 ? '#f9fafb' : '#fff',
+                              color: i === 0 ? '#fff' : '#1f2937',
+                              fontWeight: i === 0 ? 600 : 400,
+                              padding: '12px 16px',
+                              fontSize: i === 0 ? 16 : 20,
+                              fontFamily: 'Lato, sans-serif',
+                              textAlign: 'left'
+                            }}>{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 );
-
-            case 'details':
-                return (
-                    <div
-                        key={field.id}
-                        style={{
-                            fontSize: '24px',
-                            lineHeight: '1.6',
-                            color: '#0E1328',
-                            fontFamily: 'Lato',
-                            textAlign: 'justify',
-                            margin: 0,
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-word',
-                        }}
-                        dangerouslySetInnerHTML={{ __html: field.content }}
-                    />
-                );
-
-            case 'table':
-                let tableContent = field.content;
-
-                if (!tableContent || !Array.isArray(tableContent) || tableContent.length === 0) {
-                    tableContent = [
-                        ['Table Title', 'Table Title'],
-                        ['Type Here', 'Type Here'],
-                        ['Type Here', 'Type Here'],
-                        ['Enter the details…']
-                    ];
-                }
-
-                const maxCols = Math.max(...tableContent.map(row => Array.isArray(row) ? row.length : 0), 2);
-                tableContent = tableContent.map(row => {
-                    if (!Array.isArray(row)) return Array(maxCols).fill('');
-                    if (row.length < maxCols) return [...row, ...Array(maxCols - row.length).fill('')];
-                    return row;
-                });
-
-                return (
-                    <table
-                        key={field.id}
-                        style={{
-                            width: '100%',
-                            maxWidth: '100%',
-                            borderCollapse: 'collapse',
-                            tableLayout: 'fixed',
-                            margin: '16px 0',
-                            boxSizing: 'border-box',
-                            wordBreak: 'break-word',
-                        }}
-                    >
-                        <thead>
-                            <tr>
-                                {tableContent[0].map((cell, i) => (
-                                    <th key={i} style={{
-                                        backgroundColor: '#0E1328',
-                                        color: '#FFF',
-                                        fontWeight: 400,
-                                        padding: '12px',
-                                        fontSize: '20px',
-                                        fontFamily: 'Lato',
-                                        textAlign: 'left',
-                                        border: 'none',
-                                        boxSizing: 'border-box',
-                                        borderTopLeftRadius: i === 0 ? '6px' : '0',
-                                        borderTopRightRadius: i === tableContent[0].length - 1 ? '6px' : '0',
-                                    }}>
-                                        {cell || 'Table Title'}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tableContent.slice(1).map((row, rowIndex) => {
-                                const isLastRow = rowIndex === tableContent.length - 2;
-                                const isSpannedRow = row.length === 1 || (row[0] && !row[1]);
-                                
-                                return (
-                                    <tr key={rowIndex}>
-                                        {isSpannedRow ? (
-                                            <td
-                                                colSpan={maxCols}
-                                                style={{
-                                                    padding: '12px',
-                                                    fontSize: '24px',
-                                                    fontFamily: 'Lato',
-                                                    color: '#0E1328',
-                                                    borderBottom: isLastRow ? 'none' : '1px solid #E0E0E0',
-                                                    boxSizing: 'border-box',
-                                                    whiteSpace: 'pre-wrap',
-                                                }}
-                                            >
-                                                {row[0] || 'Type Here'}
-                                            </td>
-                                        ) : (
-                                            row.map((cell, colIndex) => (
-                                                <td
-                                                    key={colIndex}
-                                                    style={{
-                                                        padding: '12px',
-                                                        fontSize: '24px',
-                                                        fontFamily: 'Lato',
-                                                        color: '#0E1328',
-                                                        borderBottom: isLastRow ? 'none' : '1px solid #E0E0E0',
-                                                        boxSizing: 'border-box',
-                                                        whiteSpace: 'pre-wrap',
-                                                    }}
-                                                >
-                                                    {cell || 'Type Here'}
-                                                </td>
-                                            ))
-                                        )}
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                );
-
-            default:
+              } else {
                 return null;
-        }
-    };
-
-    return (
-        <div
-            style={{
-                width: 1088,
-                height: 1540,
-                padding: 64,
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                background: 'white',
-                position: 'relative',
-                fontFamily: 'Lato',
-            }}
-        >
-            <style>
-                {`
-                    /* Policy Preview Styles - Match editor formatting exactly */
-                    [data-policy-preview] p {
-                        margin: 0 !important;
-                        font-size: 24px !important;
-                        line-height: 1.6 !important;
-                        font-family: 'Lato' !important;
-                        color: #0E1328 !important;
-                        text-align: justify !important;
-                        white-space: pre-wrap !important;
-                        word-break: break-word !important;
-                    }
-                    
-                    [data-policy-preview] ul {
-                        margin: 0 0 16px 0 !important;
-                        padding-left: 20px !important;
-                        font-size: 24px !important;
-                        line-height: 1.6 !important;
-                        font-family: 'Lato' !important;
-                        color: #0E1328 !important;
-                        list-style-type: disc !important;
-                        list-style-position: outside !important;
-                    }
-                    
-                    [data-policy-preview] ol {
-                        margin: 0 0 16px 0 !important;
-                        padding-left: 20px !important;
-                        font-size: 24px !important;
-                        line-height: 1.6 !important;
-                        font-family: 'Lato' !important;
-                        color: #0E1328 !important;
-                        list-style-type: decimal !important;
-                        list-style-position: outside !important;
-                    }
-                    
-                    [data-policy-preview] li {
-                        margin: 0 0 8px 0 !important;
-                        font-size: 24px !important;
-                        line-height: 1.6 !important;
-                        font-family: 'Lato' !important;
-                        color: #0E1328 !important;
-                        text-align: justify !important;
-                        display: list-item !important;
-                    }
-                    
-                    [data-policy-preview] h1,
-                    [data-policy-preview] h2,
-                    [data-policy-preview] h3,
-                    [data-policy-preview] h4,
-                    [data-policy-preview] h5,
-                    [data-policy-preview] h6 {
-                        font-size: 24px !important;
-                        line-height: 1.6 !important;
-                        font-family: 'Lato' !important;
-                        color: #0E1328 !important;
-                        margin: 0 !important;
-                        font-weight: bold !important;
-                    }
-                    
-                    [data-policy-preview] strong {
-                        font-weight: bold !important;
-                    }
-                    
-                    [data-policy-preview] em {
-                        font-style: italic !important;
-                    }
-                    
-                    [data-policy-preview] u {
-                        text-decoration: underline !important;
-                    }
-                `}
-            </style>
-            <div
-                style={{
-                    fontSize: 64,
-                    fontWeight: 400,
-                    color: '#0E1328',
-                    margin: 25,
-                    lineHeight: 1,
-                    border: 'none',
-                    outline: 'none',
-                }}
-            >
-                {title || 'Terms & Conditions'}
-            </div>
-
-            <div style={{ position: 'relative', flex: 1, margin: '0 0 8px' }}>
-                <div
-                    data-policy-preview
-                    style={{
-                        height: 'calc(100% - 0px)',
-                        maxHeight: 'calc(100% - 0px)',
-                        width: '100%',
-                        padding: 32,
-                        overflow: 'hidden',
-                        fontSize: '24px',
-                        lineHeight: 1.6,
-                        color: '#0E1328',
-                        whiteSpace: 'normal',
-                        wordBreak: 'break-word',
-                        border: 'none',
-                        outline: 'none',
-                        position: 'relative',
-                        fontFamily: 'Lato',
-                        marginTop: 0,
-                        textAlign: 'justify',
-                        boxSizing: 'border-box',
-                    }}
-                >
-                    {fields && fields.length > 0 ? (
-                        <div style={{ margin: '-20px 0 0 0' }}>
-                            {fields.map(field => renderField(field))}
-                        </div>
-                    ) : (
-                        <p style={{ margin: '-20px 0 0 0', textAlign: 'justify' }}>
-                            Type your Terms & Conditions here…
-                        </p>
-                    )}
-                </div>
-            </div>
-
-            <Footer />
+              }
+            })
+          ) : (
+            <div style={{ color: '#9CA3AF', fontStyle: 'italic' }}>No policy details provided.</div>
+          )}
         </div>
-    );
+        
+      </div>
+      
+      {/* Footer positioned exactly like in PolicyPage */}
+      <Footer />
+    </div>
+  );
 }
 
-export default PolicyPagePreview;
+export default PolicyPagePreview

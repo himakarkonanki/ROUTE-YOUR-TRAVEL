@@ -1,0 +1,88 @@
+/* PolicyPage and EditorJS custom styles */
+.codex-editor .ce-block__content,
+.codex-editor .ce-toolbar__content {
+  max-width: none !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.codex-editor .ce-block {
+  margin-left: 0 !important;
+}
+
+.codex-editor {
+  padding-left: 0 !important;
+  padding-bottom: 100px !important;
+}
+
+/* Hide all paragraph placeholders to prevent duplication */
+.ce-paragraph[data-placeholder]:empty::before {
+  display: none !important;
+}
+
+/* Show only the main editor placeholder when empty */
+.codex-editor--empty .ce-paragraph[data-placeholder]:empty::before {
+  content: "Start writing your Terms & Conditions..." !important;
+  display: block !important;
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+/* Ensure main toolbar plus icon is visible */
+.ce-toolbar__plus {
+  display: block !important;
+  height: 24px !important;
+  width: 24px !important;
+}
+
+/* Hide only inline toolbar plus icons to prevent duplicates */
+.ce-inline-toolbar .ce-toolbar__plus {
+  display: none !important;
+}
+
+/* Custom table styling to match the image - dark navy header */
+.tc-table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  margin: 16px 0 !important;
+}
+
+/* Header row styling - dark navy background with white text */
+.tc-table th,
+.tc-table thead .tc-cell {
+  background-color: rgb(14, 19, 40) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  font-family: 'Lato', sans-serif !important;
+  font-size: 16px !important;
+  padding: 12px 16px !important;
+  border: none !important;
+  text-align: left !important;
+}
+
+/* Data row styling - clean white background */
+.tc-table .tc-row:not(:first-child) .tc-cell {
+  background-color: white !important;
+  color: #1f2937 !important;
+  padding: 12px 16px !important;
+  border: none !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+/* Remove all table borders */
+.tc-table, 
+.tc-table .tc-row, 
+.tc-table .tc-cell {
+  border: none !important;
+}
+
+/* Alternating row colors for better readability */
+.tc-table .tc-row:nth-child(even):not(:first-child) .tc-cell {
+  background-color: #f9fafb !important;
+}
+
+/* Hover effect for data rows */
+.tc-table .tc-row:not(:first-child):hover .tc-cell {
+  background-color: #f3f4f6 !important;
+}
+

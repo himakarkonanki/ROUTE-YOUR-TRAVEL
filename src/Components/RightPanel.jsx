@@ -16,7 +16,24 @@ function RightPanel({ pages, onPageDataUpdate }) {
   const sectionRefs = useRef({});
   const pageComponentRefs = useRef({}); // Add refs for page components
   const [showPreview, setShowPreview] = useState(false);
-  
+
+  // Function to get the latest policy page data by id
+  const getPolicyPageData = React.useCallback((pageId) => {
+    const page = pages.find(p => p.id === pageId && p.type === 'policy');
+    if (!page) return null;
+    // You can enhance this logic if your policy data is stored elsewhere
+    return {
+      title: page.title || 'Terms & Conditions',
+      fields: page.fields || [
+        {
+          id: 1,
+          type: 'details',
+          content: 'Type your Terms & Conditions here…'
+        }
+      ]
+    };
+  }, [pages]);
+
   // History management state
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
@@ -469,9 +486,11 @@ function RightPanel({ pages, onPageDataUpdate }) {
         </div>
       </div>
 
+
       {/* Preview Overlay */}
+
       {showPreview && (
-        <PreviewPane onClose={handleClosePreview} pages={pages} />
+        <PreviewPane onClose={handleClosePreview} pages={pages} getPolicyPageData={getPolicyPageData} />
       )}
 
       {/* Global CSS */}

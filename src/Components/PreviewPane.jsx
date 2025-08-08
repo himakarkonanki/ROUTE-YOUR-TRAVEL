@@ -253,7 +253,6 @@ function PreviewPane({ onClose, pages, getPolicyPageData }) {
                             content: 'Type your Terms & Conditions here…'
                         }]
                     };
-                    
                     return (
                         <PolicyPagePreview 
                             data={currentPolicyData} 

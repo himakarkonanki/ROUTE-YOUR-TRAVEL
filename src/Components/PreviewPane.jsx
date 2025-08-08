@@ -12,6 +12,7 @@ import { PDFGenerator } from './pdf/PDFGenerator'
 
 function PreviewPane({ onClose, pages, getPolicyPageData }) {
     const pagesContainerRef = useRef(null);
+    const pdfContainerRef = useRef(null); // New PDF-specific container
     const [zoomLevel, setZoomLevel] = useState(75);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
     const [policyPageData, setPolicyPageData] = useState({});
@@ -143,27 +144,16 @@ function PreviewPane({ onClose, pages, getPolicyPageData }) {
     const extractTableDataFromElement = (tableElement) => {
         const rows = [];
         
-        const thead = tableElement.querySelector('thead');
-        if (thead) {
-            const headerRow = thead.querySelector('tr');
-            if (headerRow) {
-                const headerCells = Array.from(headerRow.querySelectorAll('th')).map(th => 
-                    th.textContent || th.innerText || ''
-                );
-                rows.push(headerCells);
-            }
-        }
-        
-        const tbody = tableElement.querySelector('tbody');
-        if (tbody) {
-            const bodyRows = Array.from(tbody.querySelectorAll('tr'));
-            bodyRows.forEach(row => {
-                const cells = Array.from(row.querySelectorAll('td')).map(td => {
-                    return td.textContent || td.innerText || '';
-                });
-                rows.push(cells);
+        // Extract all rows from the table, regardless of thead/tbody structure
+        const allRows = Array.from(tableElement.querySelectorAll('tr'));
+        allRows.forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td, th')).map(cell => {
+                return cell.textContent || cell.innerText || '';
             });
-        }
+            if (cells.length > 0) {
+                rows.push(cells);
+            }
+        });
         
         return rows;
     };
@@ -299,6 +289,87 @@ function PreviewPane({ onClose, pages, getPolicyPageData }) {
         }
     };
 
+    // Function to render PDF-optimized page components (no height restrictions)
+    const renderPDFPageComponent = (page, pageNumber) => {
+        let dayNumber = 1;
+        if (page.type === 'day') {
+            const currentPageIndex = pages.findIndex(p => p.id === page.id);
+            const dayPagesBefore = pages.slice(0, currentPageIndex).filter(p => p.type === 'day').length;
+            dayNumber = dayPagesBefore + 1;
+        }
+
+        const pageProps = {
+            pageId: page.id,
+            pageNumber: pageNumber,
+            pageData: page,
+            isPreview: true,
+            isPDFMode: true, // Add PDF mode flag
+            ...(page.type === 'day' && { dayNumber }),
+        };
+
+        try {
+            switch (page.type) {
+                case 'cover':
+                    return <FrontPage {...pageProps} />;
+                case 'day':
+                    return <DayPage {...pageProps} />;
+                case 'policy':
+                    // Use the latest extracted data with PDF mode
+                    const currentPolicyData = policyPageData[page.id] || {
+                        title: page.title || 'Terms & Conditions',
+                        fields: page.fields || [{
+                            id: 1,
+                            type: 'details',
+                            content: 'Type your Terms & Conditions here…'
+                        }]
+                    };
+                    return (
+                        <PolicyPagePreview 
+                            data={currentPolicyData} 
+                            pageNumber={pageNumber}
+                            isPDFMode={true}
+                        />
+                    );
+                case 'thankyou':
+                    return <ThankYouPage {...pageProps} />;
+                default:
+                    return (
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            height: '100%', 
+                            fontFamily: 'Lato', 
+                            fontSize: '18px', 
+                            color: '#666' 
+                        }}>
+                            Unknown page type: {page.type}
+                        </div>
+                    );
+            }
+        } catch (error) {
+            console.error('Error rendering PDF page component:', error);
+            return (
+                <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '100%', 
+                    fontFamily: 'Lato', 
+                    fontSize: '18px', 
+                    color: '#f44336',
+                    flexDirection: 'column',
+                    gap: '8px'
+                }}>
+                    <div>Error loading PDF page</div>
+                    <div style={{ fontSize: '14px', color: '#999' }}>
+                        Page ID: {page.id}, Type: {page.type}
+                    </div>
+                </div>
+            );
+        }
+    };
+
     // Extract all policy page data before PDF generation
     const extractAllPolicyPageData = () => {
         const policyPages = pages.filter(page => page.type === 'policy');
@@ -332,7 +403,7 @@ function PreviewPane({ onClose, pages, getPolicyPageData }) {
             
             await PDFGenerator.generateAndDownload({
                 pages,
-                pagesContainerRef: pagesContainerRef.current,
+                pagesContainerRef: pdfContainerRef.current, // Use PDF container instead
                 policyPageData: allPolicyData,
                 onProgress: (message) => console.log(message)
             });
@@ -580,6 +651,41 @@ function PreviewPane({ onClose, pages, getPolicyPageData }) {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Hidden PDF container - used only for PDF generation */}
+            <div
+                ref={pdfContainerRef}
+                style={{
+                    position: 'absolute',
+                    top: '-10000px',
+                    left: '-10000px',
+                    visibility: 'hidden',
+                    width: '1088px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0px'
+                }}
+            >
+                {/* Render PDF-optimized pages */}
+                {pages && pages.length > 0 ? pages.map((page, index) => (
+                    <div
+                        key={`pdf-${page.id || index}`}
+                        className="pdf-page"
+                        data-page-id={page.id}
+                        data-page-type={page.type}
+                        style={{
+                            display: 'flex',
+                            width: '100%',
+                            flexDirection: 'column',
+                            background: '#FFF',
+                            overflow: 'visible'
+                        }}
+                    >
+                        {/* Render PDF-optimized page content */}
+                        {renderPDFPageComponent(page, index + 1)}
+                    </div>
+                )) : null}
             </div>
 
             {/* Global styles */}

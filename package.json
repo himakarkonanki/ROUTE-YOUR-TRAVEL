@@ -23,7 +23,6 @@
     "@editorjs/paragraph": "^2.11.7",
     "@editorjs/quote": "^2.7.6",
     "@editorjs/table": "^2.4.5",
-    "@lexical/react": "^0.33.1",
     "@tailwindcss/vite": "^4.1.11",
     "date-fns": "^4.1.0",
     "gh-pages": "^6.3.0",

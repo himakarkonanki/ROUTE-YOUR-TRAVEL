@@ -151,10 +151,10 @@ export class PDFGenerator {
                     pagesHTML += `
                     <div class="pdf-page" data-page-id="${page.id}" style="
                         width: 1088px;
-                        min-height: 1540px;
+                        min-height: auto;
                         background: white;
                         page-break-after: always;
-                        page-break-inside: avoid;
+                        page-break-inside: auto;
                         margin: 0;
                         padding: 0;
                         display: flex;
@@ -246,6 +246,12 @@ export class PDFGenerator {
             overflow: visible !important;
         }
         
+        /* Special handling for policy pages - allow content to break across pages */
+        .pdf-page[data-page-id*="policy"] {
+            page-break-inside: auto !important;
+            min-height: auto !important;
+        }
+        
         .pdf-page:last-child {
             page-break-after: avoid;
         }
@@ -292,6 +298,10 @@ export class PDFGenerator {
             .pdf-page {
                 page-break-after: always !important;
                 page-break-inside: avoid !important;
+            }
+            
+            .pdf-page[data-page-id*="policy"] {
+                page-break-inside: auto !important;
             }
             
             /* Ensure colors are preserved in print */

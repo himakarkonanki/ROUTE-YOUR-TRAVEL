@@ -24,18 +24,21 @@ const PolicyPage = React.forwardRef(function PolicyPage({ onDataUpdate, initialD
         },
         onChange: async () => {
           const savedData = await editor.saver.save();
+          
           if (onDataUpdate) {
             // Extract title and fields from blocks
-            let title = 'Terms & Conditions';
+            let title = 'Terms & Conditions'; // Static title
             const fields = [];
             let fieldId = 1;
             savedData.blocks.forEach(block => {
               if (block.type === 'header') {
-                if (fieldId === 1) {
-                  title = block.data.text || title;
-                } else {
-                  fields.push({ id: fieldId++, type: 'title', content: block.data.text });
-                }
+                // All headers are treated as content, not as the page title
+                fields.push({ 
+                  id: fieldId++, 
+                  type: 'title', 
+                  content: block.data.text,
+                  level: block.data.level || 1
+                });
               } else if (block.type === 'paragraph') {
                 fields.push({ id: fieldId++, type: 'details', content: block.data.text });
               } else if (block.type === 'table') {
@@ -86,7 +89,8 @@ const PolicyPage = React.forwardRef(function PolicyPage({ onDataUpdate, initialD
             config: {
               rows: 4, // Set to 4 to match your table structure
               cols: 2, // Set to 2 for "Room Type" and "Cost in INR"
-              withHeadings: true,
+              withHeadings: true, // Always create tables with headers
+              headings: ['Column 1', 'Column 2'], // Default header text
             }
           },
           delimiter: Delimiter,
@@ -146,20 +150,26 @@ const PolicyPage = React.forwardRef(function PolicyPage({ onDataUpdate, initialD
           border: 'none',
           padding: '16px',
           borderRadius: '4px',
-          overflow: 'visible',
+          overflow: 'visible', // Hide overflow at this level
           backgroundColor: '#fff',
           position: 'relative',
+          maxHeight: '1100px',
+          minHeight: '200px', // Ensure minimum height for content area
         }}
       >
         <div 
           id="editorjs" 
           style={{
-            minHeight: '600px',
+            height: '100%',
+            maxHeight: '1068px', // 1250px - 32px padding (16px top + 16px bottom)
+            minHeight: '150px', // Minimum height for editor content
             fontSize: '20px',
             lineHeight: '1.8',
             fontFamily: 'Lato',
             color: 'rgb(14, 19, 40)',
             textAlign: 'justify',
+            overflow: 'visible', 
+            position: 'relative',
           }}
         />
       </div>

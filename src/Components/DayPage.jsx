@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import close from '../assets/icons/close.svg'
-import hotel from '../assets/icons/hotel.svg'
-import fork_spoon from '../assets/icons/fork_spoon.svg'
+import hotel from '../assets/icons/Hotel_orange.svg'
+import fork_spoon from '../assets/icons/Restaurant_orange.svg'
 import table from '../assets/icons/table.svg'
 import drag_indicator from '../assets/icons/drag_indicator.svg'
 import flightland from '../assets/icons/flight_land.svg'
